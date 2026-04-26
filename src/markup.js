@@ -275,12 +275,14 @@ export const markup = `
               <div class="eq-scroll" id="gc-eq-list"><div style="font-size:.68rem;color:#6B6257;font-family:var(--font-body)">Loading&hellip;</div></div>
             </div>
             <div class="gc">
-              <div class="gc-eye">&#128293; Active Wildfires</div>
+              <div class="gc-eye">&#128293; Active Wildfires <span style="font-size:.6rem;color:#6B6257;font-weight:400;margin-left:.3rem">Global</span></div>
               <div class="fire-g">
                 <div class="fire-kv"><div class="fire-val" id="gc-ftotal">--</div><div class="fire-lbl">Total Active</div></div>
                 <div class="fire-kv"><div class="fire-val" id="gc-fbright" style="color:#D4A652">--</div><div class="fire-lbl">Avg Brightness</div></div>
-                <div class="fire-kv"><div class="fire-val" id="gc-fna" style="color:#B7AA96">--</div><div class="fire-lbl">N. America</div></div>
-                <div class="fire-kv"><div class="fire-val" id="gc-fsa" style="color:#B7AA96">--</div><div class="fire-lbl">S. America</div></div>
+                <div class="fire-kv"><div class="fire-val" id="gc-fna" style="color:#E8763A">--</div><div class="fire-lbl">N. America</div></div>
+                <div class="fire-kv"><div class="fire-val" id="gc-fsa" style="color:#E8763A">--</div><div class="fire-lbl">S. America</div></div>
+                <div class="fire-kv"><div class="fire-val" id="gc-faf" style="color:#E8763A">--</div><div class="fire-lbl">Africa</div></div>
+                <div class="fire-kv"><div class="fire-val" id="gc-fasia" style="color:#E8763A">--</div><div class="fire-lbl">Asia &amp; Oceania</div></div>
               </div>
               <p style="font-size:.6rem;color:#6B6257;margin-top:.5rem;font-family:var(--font-body)">Source: NASA FIRMS VIIRS Global 24h &middot; Top 600 hotspots by brightness</p>
             </div>
@@ -330,7 +332,7 @@ export const markup = `
           <div class="about-kpi-label">Projects Shipped</div>
         </div>
         <div class="about-kpi reveal reveal-delay-3">
-          <div class="about-kpi-val"><span class="accent">∞</span></div>
+          <div class="about-kpi-val"><span class="accent">&#8734;</span></div>
           <div class="about-kpi-label">Curiosity</div>
         </div>
         <div class="about-kpi reveal reveal-delay-4">
