@@ -1,6 +1,13 @@
 import './styles/main.css';
-import { initPortfolio } from './portfolio.js';
+import { initUI } from './sections/ui.js';
+import { initMomentum } from './sections/momentum.js';
+import { initGlobe } from './scene/globe.js';
 
-document.getElementById('app').innerHTML = `PLACEHOLDER_PORTFOLIO_HTML`;
+// Mount markup
+import markup from './markup.js';
+document.getElementById('app').innerHTML = markup;
 
-initPortfolio();
+// Boot all systems after DOM is ready
+initUI();
+initMomentum();
+initGlobe();
