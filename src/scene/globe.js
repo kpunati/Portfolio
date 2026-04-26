@@ -1,6 +1,10 @@
-// Globe dashboard — Three.js WebGL
-// Requires THREE loaded via CDN in index.html
+// src/scene/globe.js — Three.js Live Earth Dashboard
+// Requires THREE loaded globally via CDN before this module runs.
+// Includes: ISS live position, earthquake feed, wildfire data, WebGL globe.
+
 export function initGlobe() {
-  // Globe initialization code ported from v9
-  console.log('Globe init');
-}
+  if (typeof THREE === 'undefined') {
+    console.warn('globe.js: THREE not loaded, retrying in 300ms');
+    setTimeout(initGlobe, 300);
+    return;
+  }
