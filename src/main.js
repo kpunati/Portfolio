@@ -43,15 +43,20 @@ async function bootVisuals() {
     { initParticles },
     { initMomentum },
     { initLayers },
+    { initSpotlight },
   ] = await Promise.all([
     import('./sections/particles.js'),
     import('./sections/momentum.js'),
     import('./sections/layers.js'),
+    import('./sections/spotlight.js'),
   ]);
 
   initParticles({ prefersReducedMotion });
   initMomentum();
   initLayers();
+  if (!prefersReducedMotion) {
+    initSpotlight();
+  }
 
   if (!prefersReducedMotion) {
     whenIdle(async () => {

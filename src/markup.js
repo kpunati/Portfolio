@@ -145,7 +145,8 @@ export const markup = `
     <div class="projects-grid">
 
       <!-- Stock Sentiment -->
-      <a href="#dashboards" class="project-card reveal reveal-delay-1" data-project-index="0" aria-label="Stock Sentiment Analysis — view dashboard">
+      <a href="#dashboards" class="project-card glow-card reveal reveal-delay-1" data-project-index="0" data-glow data-color="gold" aria-label="Stock Sentiment Analysis — view dashboard">
+        <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -178,7 +179,8 @@ export const markup = `
       </a>
 
       <!-- Neural Kitchen -->
-      <a href="https://neuralkitchen.vercel.app" class="project-card reveal reveal-delay-2" data-project-index="1" target="_blank" rel="noopener noreferrer" aria-label="Neural Kitchen">
+      <a href="https://neuralkitchen.vercel.app" class="project-card glow-card reveal reveal-delay-2" data-project-index="1" data-glow data-color="purple" target="_blank" rel="noopener noreferrer" aria-label="Neural Kitchen">
+        <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" style="background:var(--color-secondary-hl);border-color:rgba(122,90,143,0.2);color:#B8A0CC" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
@@ -207,7 +209,8 @@ export const markup = `
       </a>
 
       <!-- AI Newsletter -->
-      <a href="https://aiaware.beehiiv.com" class="project-card reveal reveal-delay-3" data-project-index="2" target="_blank" rel="noopener noreferrer" aria-label="AI Aware Newsletter">
+      <a href="https://aiaware.beehiiv.com" class="project-card glow-card reveal reveal-delay-3" data-project-index="2" data-glow data-color="green" target="_blank" rel="noopener noreferrer" aria-label="AI Aware Newsletter">
+        <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" style="background:rgba(77,170,116,0.1);border-color:rgba(77,170,116,0.2);color:var(--color-success)" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -262,7 +265,8 @@ export const markup = `
 
       <!-- Globe Dashboard -->
       <div class="globe-parallax-wrap" id="globe-parallax-wrap">
-      <div class="embed-shell reveal" id="globe-embed-shell">
+      <div class="embed-shell glow-card reveal" id="globe-embed-shell" data-glow data-color="blue">
+        <div class="glow-inner" data-glow></div>
         <div class="embed-shell-header">
           <div class="embed-shell-dots" aria-hidden="true">
             <div class="embed-shell-dot"></div><div class="embed-shell-dot"></div><div class="embed-shell-dot"></div>
@@ -364,19 +368,23 @@ export const markup = `
         </div>
       </div>
       <div class="about-kpis">
-        <div class="about-kpi reveal reveal-delay-1">
+        <div class="about-kpi glow-card reveal reveal-delay-1" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val">3<span class="accent">+</span></div>
           <div class="about-kpi-label">Years Analysing Data</div>
         </div>
-        <div class="about-kpi reveal reveal-delay-2">
+        <div class="about-kpi glow-card reveal reveal-delay-2" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val">10<span class="accent">+</span></div>
           <div class="about-kpi-label">Projects Shipped</div>
         </div>
-        <div class="about-kpi reveal reveal-delay-3">
+        <div class="about-kpi glow-card reveal reveal-delay-3" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val"><span class="accent">&#8734;</span></div>
           <div class="about-kpi-label">Curiosity</div>
         </div>
-        <div class="about-kpi reveal reveal-delay-4">
+        <div class="about-kpi glow-card reveal reveal-delay-4" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val">0<span class="accent">ms</span></div>
           <div class="about-kpi-label">Time to Start Building</div>
         </div>
