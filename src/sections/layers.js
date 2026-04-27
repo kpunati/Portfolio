@@ -166,16 +166,16 @@ export function initLayers() {
     const dwell = hoverStart && heroVisible ? clamp((now - hoverStart) / 3200) : 0;
     pressure = smooth(pressure, dwell, hoverStart ? 0.055 : 0.08);
 
-    const projectsProgress = sectionProgress(projects, 1.02, 0.12);
+    const projectsProgress = sectionProgress(projects, 1.08, 0.08);
     const projectsRect = projects ? projects.getBoundingClientRect() : null;
     const auroraProgress = projectsRect
       ? clamp((window.innerHeight - projectsRect.bottom + 360) / 520)
       : 0;
 
     const tzRect = tz ? tz.getBoundingClientRect() : null;
-    const tzProgress = tzRect ? clamp((window.innerHeight * 0.86 - tzRect.top) / (window.innerHeight * 0.95)) : 0;
+    const tzProgress = tzRect ? clamp((window.innerHeight * 0.92 - tzRect.top) / (window.innerHeight * 0.88)) : 0;
     const globeRect = globeWrap ? globeWrap.getBoundingClientRect() : null;
-    const globeProgress = globeRect ? clamp((window.innerHeight * 0.94 - globeRect.top) / (window.innerHeight * 0.72)) : 0;
+    const globeProgress = globeRect ? clamp((window.innerHeight * 0.98 - globeRect.top) / (window.innerHeight * 0.86)) : 0;
     const aboutProgress = sectionProgress(about, 0.9, 0.22);
 
     hooks.densityBoost = pressure * 1.2 + projectsProgress * 0.28;
@@ -200,7 +200,7 @@ export function initLayers() {
     drawTransition(tzProgress, dt);
 
     if (globeWrap) {
-      const lift = (1 - globeProgress) * 160 - tzProgress * 28;
+      const lift = (1 - globeProgress) * 210 - tzProgress * 36;
       const scale = 0.965 + globeProgress * 0.035;
       globeWrap.style.transform = `translate3d(0, ${lift.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
     }

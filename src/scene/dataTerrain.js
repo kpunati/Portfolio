@@ -43,6 +43,7 @@ export function initDataTerrain() {
     about: 0,
     activeProject: 0
   };
+  state.projectProgress = 0;
 
   const clock = new THREE.Clock();
   const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
@@ -76,6 +77,8 @@ export function initDataTerrain() {
   window.addEventListener('portfolio:project-focus', (event) => {
     const index = Number(event.detail?.index);
     state.targetFocusProject = Number.isFinite(index) ? index : -1;
+    const progress = Number(event.detail?.progress);
+    if (Number.isFinite(progress)) state.projectProgress = clamp(progress);
   });
 
   function resize() {
@@ -626,7 +629,7 @@ export function initDataTerrain() {
     state.transition = lerp(state.transition, sectionProgress('transition-zone', 0.96, 0.12), 0.06);
     state.globe = lerp(state.globe, sectionProgress('dashboards', 0.9, 0.18), 0.06);
     state.about = lerp(state.about, sectionProgress('about', 0.9, 0.18), 0.06);
-    const fallbackProject = clamp(Math.floor(state.projects * 3.15), 0, 2);
+    const fallbackProject = clamp(Math.floor((state.projectProgress || state.projects) * 3.05), 0, 2);
     const targetActiveProject = state.targetFocusProject >= 0 ? state.targetFocusProject : fallbackProject;
     state.activeProject = lerp(state.activeProject, targetActiveProject, 0.08);
     const activeProjectIndex = Math.round(clamp(state.activeProject, 0, 2));
@@ -642,8 +645,8 @@ export function initDataTerrain() {
     stars.position.z = state.scroll * 4.0;
     starMaterial.opacity = 0.18 + state.hero * 0.32 + state.transition * 0.14 - state.about * 0.14;
 
-    chamberMaterial.opacity = 0.08 + state.hero * 0.34 - state.projects * 0.16 - state.about * 0.12;
-    chamberAccentMaterial.opacity = 0.05 + state.hero * 0.22 + state.projects * 0.05 - state.about * 0.1;
+    chamberMaterial.opacity = 0.08 + state.hero * 0.32 + state.projects * 0.08 - state.transition * 0.14 - state.about * 0.12;
+    chamberAccentMaterial.opacity = 0.05 + state.hero * 0.20 + state.projects * 0.12 - state.transition * 0.12 - state.about * 0.1;
     chamberGroup.position.x = lerp(chamberGroup.position.x, state.mouseX * -0.25, 0.04);
     chamberGroup.position.y = lerp(chamberGroup.position.y, state.mouseY * -0.12 + state.projects * -0.42, 0.04);
     chamberGroup.position.z = lerp(chamberGroup.position.z, state.scroll * 5.8 - state.projects * 2.0, 0.04);
@@ -712,26 +715,26 @@ export function initDataTerrain() {
       panel.rotation.y = base.ry + state.mouseX * 0.025;
     });
 
-    const artifactOpacity = Math.max(0, state.projects * 0.95 - state.globe * 0.44 - state.about * 0.3);
+    const artifactOpacity = Math.max(0, state.projects * 1.08 - state.transition * 0.26 - state.globe * 0.44 - state.about * 0.3);
     artifactMaterials.forEach((material, index) => {
       const dotBoost = index > 2 ? 0.18 : 0;
       material.opacity = artifactOpacity * (0.34 + dotBoost);
     });
-    artifactGroup.position.y = lerp(artifactGroup.position.y, state.projects * 0.7 - state.transition * 0.34, 0.045);
-    artifactGroup.position.z = lerp(artifactGroup.position.z, -state.projects * 0.8 + state.transition * -1.4, 0.045);
+    artifactGroup.position.y = lerp(artifactGroup.position.y, state.projects * 0.9 - state.transition * 0.46, 0.045);
+    artifactGroup.position.z = lerp(artifactGroup.position.z, -state.projects * 1.1 + state.transition * -1.7, 0.045);
     artifacts.forEach((artifact, index) => {
       const base = artifact.userData.base;
       const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
       const laneOffset = (index - state.activeProject) * 4.9;
       artifact.position.x = lerp(artifact.position.x, laneOffset + state.mouseX * (0.22 + index * 0.06), 0.055);
       artifact.position.y = base.y + Math.sin(time * 0.62 + index) * 0.12 + active * 0.58;
-      artifact.position.z = base.z + Math.sin(time * 0.38 + index) * 0.16 - active * 1.35 + Math.abs(index - state.activeProject) * -0.72;
+      artifact.position.z = base.z + Math.sin(time * 0.38 + index) * 0.16 - active * 1.75 + Math.abs(index - state.activeProject) * -0.92;
       artifact.rotation.x = Math.sin(time * 0.28 + index) * 0.035 + state.mouseY * -0.025;
       artifact.rotation.y = base.ry + state.mouseX * 0.065 + active * 0.14 - (index - state.activeProject) * 0.12;
-      artifact.scale.setScalar(0.72 + state.projects * 0.22 + active * 0.34);
+      artifact.scale.setScalar(0.68 + state.projects * 0.22 + active * 0.44);
     });
 
-    scanMaterial.opacity = Math.max(0, state.projects * 0.38 - state.transition * 0.2 - state.about * 0.2);
+    scanMaterial.opacity = Math.max(0, state.projects * 0.5 + state.transition * 0.12 - state.globe * 0.22 - state.about * 0.2);
     scanGroup.position.set(
       lerp(scanGroup.position.x, (activeProjectIndex - 1) * 2.2 + state.mouseX * 0.2, 0.055),
       lerp(scanGroup.position.y, 0.92 + state.projects * 0.62, 0.055),
@@ -746,15 +749,15 @@ export function initDataTerrain() {
       plane.scale.setScalar(0.88 + state.projects * 0.2 + Math.sin(time * 1.4 + index) * 0.025);
     });
 
-    const tunnelOpacity = Math.max(0, state.transition * 0.78 - state.about * 0.3);
-    tunnelMaterial.opacity = tunnelOpacity * 0.5;
-    tunnelGoldMaterial.opacity = tunnelOpacity * 0.34;
-    tunnelGroup.position.z = lerp(tunnelGroup.position.z, state.transition * 3.2 + state.globe * 3.6, 0.055);
+    const tunnelOpacity = Math.max(0, state.transition * 0.92 + state.globe * 0.12 - state.about * 0.3);
+    tunnelMaterial.opacity = tunnelOpacity * 0.58;
+    tunnelGoldMaterial.opacity = tunnelOpacity * 0.42;
+    tunnelGroup.position.z = lerp(tunnelGroup.position.z, state.transition * 4.1 + state.globe * 4.2, 0.055);
     tunnelGroup.position.y = lerp(tunnelGroup.position.y, state.transition * 0.55 - state.globe * 0.45, 0.055);
     tunnelGroup.rotation.z = time * 0.08 + state.mouseX * 0.08;
     tunnelGroup.children.forEach((ring, index) => {
       const pulse = 1 + Math.sin(time * 2.0 + ring.userData.phase) * 0.08;
-      ring.scale.setScalar(pulse * (1 + state.transition * 0.35));
+      ring.scale.setScalar(pulse * (1 + state.transition * 0.48 + state.globe * 0.12));
       ring.rotation.z = time * (0.14 + index * 0.01);
     });
 

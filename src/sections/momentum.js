@@ -56,7 +56,9 @@ export function initMomentum() {
 
   var projectCards = Array.prototype.slice.call(document.querySelectorAll('.project-card'));
   var projectSteps = Array.prototype.slice.call(document.querySelectorAll('.project-stage-steps span'));
+  var projectsSection = document.getElementById('projects');
   var activeProjectIndex = -1;
+  var projectProgress = 0;
 
   function setActiveProject(index) {
     if(index === activeProjectIndex) return;
@@ -70,12 +72,23 @@ export function initMomentum() {
       else step.classList.remove('is-active');
     });
     document.documentElement.style.setProperty('--active-project', String(Math.max(0, index)));
-    window.dispatchEvent(new CustomEvent('portfolio:project-focus', { detail: { index: index } }));
+    window.dispatchEvent(new CustomEvent('portfolio:project-focus', {
+      detail: { index: index, progress: projectProgress }
+    }));
+  }
+
+  function updateProjectProgress() {
+    if(!projectsSection) return;
+    var rect = projectsSection.getBoundingClientRect();
+    var travel = Math.max(1, rect.height - window.innerHeight);
+    projectProgress = clamp(-rect.top / travel, 0, 1);
+    document.documentElement.style.setProperty('--project-local-progress', projectProgress.toFixed(3));
   }
 
   function updateProjectFocus() {
     if(!projectCards.length) return;
-    var viewportCenter = window.innerHeight * 0.5;
+    updateProjectProgress();
+    var viewportCenter = window.innerHeight * 0.46;
     var bestIndex = -1;
     var bestDistance = Infinity;
     projectCards.forEach(function(card, index){
@@ -83,6 +96,10 @@ export function initMomentum() {
       if(rect.bottom < 120 || rect.top > window.innerHeight - 80) return;
       var center = rect.top + rect.height * 0.5;
       var distance = Math.abs(center - viewportCenter);
+      var visible = clamp((Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)) / Math.max(1, rect.height), 0, 1);
+      var depth = clamp(1 - distance / Math.max(1, window.innerHeight * 0.62), 0, 1);
+      card.style.setProperty('--card-depth', depth.toFixed(3));
+      card.style.setProperty('--card-visible', visible.toFixed(3));
       if(distance < bestDistance) {
         bestDistance = distance;
         bestIndex = index;
