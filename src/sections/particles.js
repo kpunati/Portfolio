@@ -92,6 +92,7 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
       ctx.fillStyle=n.plum?`rgba(150,120,180,${(0.22+boost*.42) * baseAlpha})`:`rgba(212,166,82,${(0.22+boost*.42) * baseAlpha})`;
       ctx.fill();
     });
+
     requestAnimationFrame(draw);
   }
   resize(); draw();
@@ -106,8 +107,16 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x000000, 0);
+  renderer.outputColorSpace = THREE.SRGBColorSpace || renderer.outputColorSpace;
 
   const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffdf9a, 0.62));
+  const keyLight = new THREE.DirectionalLight(0xfff0c2, 1.8);
+  keyLight.position.set(2.4, 3.2, 4.6);
+  scene.add(keyLight);
+  const rimLight = new THREE.DirectionalLight(0x5eead4, 0.92);
+  rimLight.position.set(-3.2, -1.6, 2.2);
+  scene.add(rimLight);
   const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 0, 5.5);
 
@@ -120,7 +129,7 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   window.addEventListener('resize', resize);
   resize();
 
-  const TURNS=6, PPT=60, TOTAL=TURNS*PPT, HEIGHT=8, HRAD=1.2;
+  const TURNS=5, PPT=42, TOTAL=TURNS*PPT, HEIGHT=8, HRAD=1.35;
   function makeHelixPoints(phase){
     const pts=[];
     for(let i=0;i<=TOTAL;i++){
@@ -130,24 +139,57 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     return pts;
   }
 
-  const mat1 = new THREE.MeshBasicMaterial({color:0xD4A652, transparent:true, opacity:.82});
-  const mat2 = new THREE.MeshBasicMaterial({color:0x9B6FCC, transparent:true, opacity:.65});
+  const mat1 = new THREE.MeshStandardMaterial({
+    color:0xD4A652,
+    emissive:0x4f3208,
+    emissiveIntensity:0.42,
+    metalness:0.92,
+    roughness:0.24,
+    transparent:true,
+    opacity:.92
+  });
+  const mat2 = new THREE.MeshStandardMaterial({
+    color:0xF2C96A,
+    emissive:0x3c2a0b,
+    emissiveIntensity:0.32,
+    metalness:0.9,
+    roughness:0.18,
+    transparent:true,
+    opacity:.76
+  });
+  const glowMat = new THREE.MeshBasicMaterial({
+    color:0xD4A652,
+    transparent:true,
+    opacity:.16,
+    blending:THREE.AdditiveBlending,
+    depthWrite:false
+  });
 
-  const helix1 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0)), TOTAL, 0.055, 8, false), mat1);
-  const helix2 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(Math.PI)), TOTAL, 0.040, 8, false), mat2);
+  const helix1 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0)), TOTAL, 0.13, 14, false), mat1);
+  const helix2 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(Math.PI)), TOTAL, 0.095, 14, false), mat2);
+  const helixGlow = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0.18)), TOTAL, 0.19, 10, false), glowMat);
 
   const rungGroup = new THREE.Group();
-  const RUNGS = TURNS * 8;
+  const RUNGS = TURNS * 6;
+  const rungMat = new THREE.MeshStandardMaterial({
+    color:0xF4C86A,
+    emissive:0x302008,
+    emissiveIntensity:0.22,
+    metalness:0.86,
+    roughness:0.28,
+    transparent:true,
+    opacity:.42
+  });
   for(let i=0;i<=RUNGS;i++){
     const t=i/RUNGS, angle=t*TURNS*Math.PI*2, y=(t-.5)*HEIGHT;
     const p1=new THREE.Vector3(Math.cos(angle)*HRAD, y, Math.sin(angle)*HRAD);
     const p2=new THREE.Vector3(Math.cos(angle+Math.PI)*HRAD, y, Math.sin(angle+Math.PI)*HRAD);
     var rc=new THREE.LineCurve3(p1,p2);
-    rungGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rc,1,0.009,4,false),new THREE.MeshBasicMaterial({color:0xD4A652,transparent:true,opacity:.28})));
+    rungGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rc,1,0.022,6,false),rungMat));
   }
 
   const helixGroup = new THREE.Group();
-  helixGroup.add(helix1, helix2, rungGroup);
+  helixGroup.add(helixGlow, helix1, helix2, rungGroup);
   scene.add(helixGroup);
 
   let targetRotY=0, currentRotY=0, currentX=0, currentY=0, scrollY=0;
@@ -202,8 +244,10 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     helix2.scale.setScalar(breathe);
 
     const op = mat1.opacity + (targetOpacity * 0.55 - mat1.opacity) * 0.06;
-    mat1.opacity = op;
-    mat2.opacity = op * 0.64;
+    mat1.opacity = Math.min(0.94, op * 1.26);
+    mat2.opacity = Math.min(0.82, op * 0.96);
+    glowMat.opacity = Math.min(0.22, op * 0.22);
+    rungMat.opacity = Math.min(0.48, op * 0.58);
 
     renderer.render(scene, camera);
   }

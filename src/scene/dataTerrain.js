@@ -270,33 +270,38 @@ export function initDataTerrain() {
   scene.add(stars);
 
   const chamberGroup = new THREE.Group();
-  const chamberMaterial = new THREE.MeshBasicMaterial({
+  const chamberMaterial = new THREE.LineBasicMaterial({
     color: 0xd4a652,
     transparent: true,
     opacity: 0.0,
-    wireframe: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false
   });
-  const chamberAccentMaterial = new THREE.MeshBasicMaterial({
-    color: 0x7a5a8f,
+  const chamberAccentMaterial = new THREE.LineBasicMaterial({
+    color: 0x5eead4,
     transparent: true,
     opacity: 0.0,
-    wireframe: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false
   });
-  for (let i = 0; i < (isMobile ? 5 : 8); i++) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(3.8 + i * 1.22, 0.01, 6, 96),
-      i % 2 ? chamberAccentMaterial : chamberMaterial
+  const chamberFrames = [
+    [-3.2, 1.0, -5.0, 7.4, 2.4, 0.08, 0.03, 0.18],
+    [2.8, -0.25, -6.8, 6.2, 1.8, 0.08, -0.08, -0.22],
+    [0.4, 2.25, -9.2, 8.8, 2.0, 0.08, 0.08, 0.08],
+    [-4.8, -1.8, -10.8, 5.8, 0.08, 2.2, 0.0, 0.28],
+    [5.4, 1.4, -12.4, 6.8, 1.6, 0.08, -0.04, -0.28]
+  ];
+  chamberFrames.slice(0, isMobile ? 3 : chamberFrames.length).forEach((data, index) => {
+    const frame = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(data[3], data[4], data[5])),
+      index % 2 ? chamberAccentMaterial : chamberMaterial
     );
-    ring.position.set((i - 3.5) * 0.22, 0.45 + Math.sin(i) * 0.28, -4.5 - i * 1.18);
-    ring.rotation.x = Math.PI * 0.5 + i * 0.035;
-    ring.rotation.y = i * 0.16;
-    ring.userData.phase = i * 0.54;
-    chamberGroup.add(ring);
-  }
+    frame.position.set(data[0], data[1], data[2]);
+    frame.rotation.x = data[6];
+    frame.rotation.y = data[7];
+    frame.userData.phase = index * 0.54;
+    chamberGroup.add(frame);
+  });
   scene.add(chamberGroup);
 
   const signalGroup = new THREE.Group();
