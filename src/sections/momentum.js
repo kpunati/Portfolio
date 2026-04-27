@@ -8,8 +8,13 @@ export function initMomentum() {
 (function() {
 
   /* ── Shared scroll state ── */
-  var SY = 0;
-  window.addEventListener('scroll', function(){ SY = window.scrollY; }, {passive:true});
+  var SY = window.scrollY || 0;
+  var needsUiUpdate = true;
+  window.addEventListener('scroll', function(){
+    SY = window.scrollY;
+    needsUiUpdate = true;
+  }, {passive:true});
+  window.addEventListener('resize', function(){ needsUiUpdate = true; });
 
   /* ── Helpers ── */
   function sectionTop(id){
@@ -122,6 +127,7 @@ export function initMomentum() {
       card.style.setProperty('--tilt-x', '0deg');
       card.style.setProperty('--tilt-y', '0deg');
       updateProjectFocus();
+      needsUiUpdate = true;
     });
   });
 
@@ -252,7 +258,10 @@ export function initMomentum() {
   ──────────────────────────────────────────────────────────── */
   function loop(){
     requestAnimationFrame(loop);
-    updateRail();
+    if(needsUiUpdate) {
+      updateRail();
+      needsUiUpdate = false;
+    }
   }
   requestAnimationFrame(loop);
 

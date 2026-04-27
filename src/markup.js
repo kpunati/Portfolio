@@ -134,8 +134,8 @@ export const markup = `
     <p class="section-sub reveal reveal-delay-2">Each project bridges data and product — built end-to-end, from raw pipeline to polished interface.</p>
     <div class="project-scroll-stage">
       <div class="project-stage-copy reveal reveal-delay-3" aria-hidden="true">
-        <div class="project-stage-kicker">Scroll Protocol</div>
-        <div class="project-stage-title">Three active systems come online as the camera drops into the observatory.</div>
+        <div class="project-stage-kicker">Project Systems</div>
+        <div class="project-stage-title">Three working builds, each tied to a live data or automation problem.</div>
         <div class="project-stage-steps">
           <span><b>01</b> Signal ingestion</span>
           <span><b>02</b> Model reasoning</span>
@@ -244,25 +244,6 @@ export const markup = `
   </div>
 </section>
 
-<!-- TRANSITION ZONE -->
-<section class="transition-zone" id="transition-zone" aria-hidden="true">
-  <canvas id="tz-canvas"></canvas>
-  <div class="tz-coords" id="tz-coords"></div>
-  <div class="tz-reticle" id="tz-reticle">
-    <svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="70" cy="70" r="46" stroke="#D4A652" stroke-width="0.8" stroke-dasharray="4 7" opacity="0.45"/>
-      <circle cx="70" cy="70" r="22" stroke="#D4A652" stroke-width="0.6" opacity="0.3"/>
-      <line x1="70" y1="8"  x2="70" y2="44"  stroke="#D4A652" stroke-width="0.9" opacity="0.6"/>
-      <line x1="70" y1="96" x2="70" y2="132" stroke="#D4A652" stroke-width="0.9" opacity="0.6"/>
-      <line x1="8"  y1="70" x2="44"  y2="70" stroke="#D4A652" stroke-width="0.9" opacity="0.6"/>
-      <line x1="96" y1="70" x2="132" y2="70" stroke="#D4A652" stroke-width="0.9" opacity="0.6"/>
-      <circle cx="70" cy="70" r="4" fill="#FF2244" opacity="0.95"/>
-      <circle cx="70" cy="70" r="8" stroke="#FF2244" stroke-width="0.6" opacity="0.4"/>
-    </svg>
-  </div>
-  <div class="tz-label">Telemetry Corridor</div>
-</section>
-
 <!-- DASHBOARDS -->
 <section class="section dashboards-section" id="dashboards" aria-labelledby="dashboards-heading">
   <div class="container">
@@ -273,9 +254,9 @@ export const markup = `
       <span>Terrain signal</span><span>Global telemetry</span><span>Live dashboard</span>
     </div>
     <div class="globe-reveal-strip reveal reveal-delay-4" aria-hidden="true">
-      <span><b>01</b> Resolve surface</span>
-      <span><b>02</b> Attach live feeds</span>
-      <span><b>03</b> Open control layer</span>
+      <span><b>Live</b> Public APIs</span>
+      <span><b>3D</b> Earth Layer</span>
+      <span><b>4</b> Signal Types</span>
     </div>
     <div class="dashboards-grid">
 
@@ -295,19 +276,6 @@ export const markup = `
         </div>
         <div class="globe-wrap">
           <div class="globe-left">
-            <div class="globe-reveal-overlay" aria-hidden="true">
-              <div class="globe-reveal-lock">
-                <span class="globe-lock-ring"></span>
-                <span class="globe-lock-core"></span>
-              </div>
-              <div class="globe-reveal-copy">
-                <span>Global feed resolving</span>
-                <b>Earth intelligence layer</b>
-              </div>
-              <div class="globe-reveal-nodes">
-                <i></i><i></i><i></i><i></i><i></i>
-              </div>
-            </div>
             <canvas id="globe-canvas-inner"></canvas>
             <div class="globe-overlay-pills">
               <div class="g-pill" id="gp-eq"><span class="gd" style="background:#E040FB"></span><span id="gc-eq-count">--</span> earthquakes 24h</div>

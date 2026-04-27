@@ -38,7 +38,6 @@ export function initDataTerrain() {
     targetFocusProject: -1,
     hero: 0,
     projects: 0,
-    transition: 0,
     globe: 0,
     about: 0,
     activeProject: 0
@@ -508,32 +507,6 @@ export function initDataTerrain() {
   }
   scene.add(scanGroup);
 
-  const tunnelGroup = new THREE.Group();
-  const tunnelMaterial = new THREE.MeshBasicMaterial({
-    color: 0xff2244,
-    transparent: true,
-    opacity: 0,
-    wireframe: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  });
-  const tunnelGoldMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffd56a,
-    transparent: true,
-    opacity: 0,
-    wireframe: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  });
-  for (let i = 0; i < (isMobile ? 7 : 12); i++) {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.6 + i * 0.28, 0.012, 5, 72), i % 3 === 0 ? tunnelMaterial : tunnelGoldMaterial);
-    ring.position.set(0, 0.15, -8.5 - i * 1.25);
-    ring.rotation.x = Math.PI * 0.5;
-    ring.userData.phase = i * 0.42;
-    tunnelGroup.add(ring);
-  }
-  scene.add(tunnelGroup);
-
   const projectBeacons = [];
   const beaconGeometry = new THREE.SphereGeometry(0.11, 14, 14);
   const beaconMaterials = [
@@ -614,6 +587,7 @@ export function initDataTerrain() {
   scene.add(glowPlane);
 
   let visible = true;
+  let contourFrame = 0;
   document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
 
   function animate() {
@@ -622,11 +596,11 @@ export function initDataTerrain() {
 
     const elapsed = clock.getElapsedTime();
     const time = prefersReducedMotion ? 0 : elapsed;
+    contourFrame += 1;
     state.scroll = lerp(state.scroll, state.targetScroll, 0.06);
     state.focusProject = lerp(state.focusProject, state.targetFocusProject, 0.12);
     state.hero = lerp(state.hero, 1 - sectionProgress('projects', 0.98, 0.76), 0.05);
     state.projects = lerp(state.projects, sectionProgress('projects', 0.9, 0.1), 0.05);
-    state.transition = lerp(state.transition, sectionProgress('transition-zone', 0.96, 0.12), 0.06);
     state.globe = lerp(state.globe, sectionProgress('dashboards', 0.9, 0.18), 0.06);
     state.about = lerp(state.about, sectionProgress('about', 0.9, 0.18), 0.06);
     const fallbackProject = clamp(Math.floor((state.projectProgress || state.projects) * 3.05), 0, 2);
@@ -643,10 +617,10 @@ export function initDataTerrain() {
 
     stars.rotation.y = time * 0.012 + state.mouseX * 0.012;
     stars.position.z = state.scroll * 4.0;
-    starMaterial.opacity = 0.18 + state.hero * 0.32 + state.transition * 0.14 - state.about * 0.14;
+    starMaterial.opacity = 0.18 + state.hero * 0.32 + state.projects * 0.1 + state.globe * 0.06 - state.about * 0.14;
 
-    chamberMaterial.opacity = 0.08 + state.hero * 0.32 + state.projects * 0.08 - state.transition * 0.14 - state.about * 0.12;
-    chamberAccentMaterial.opacity = 0.05 + state.hero * 0.20 + state.projects * 0.12 - state.transition * 0.12 - state.about * 0.1;
+    chamberMaterial.opacity = 0.08 + state.hero * 0.32 + state.projects * 0.06 - state.globe * 0.12 - state.about * 0.12;
+    chamberAccentMaterial.opacity = 0.05 + state.hero * 0.20 + state.projects * 0.10 - state.globe * 0.10 - state.about * 0.1;
     chamberGroup.position.x = lerp(chamberGroup.position.x, state.mouseX * -0.25, 0.04);
     chamberGroup.position.y = lerp(chamberGroup.position.y, state.mouseY * -0.12 + state.projects * -0.42, 0.04);
     chamberGroup.position.z = lerp(chamberGroup.position.z, state.scroll * 5.8 - state.projects * 2.0, 0.04);
@@ -681,31 +655,33 @@ export function initDataTerrain() {
     });
     signalAttr.needsUpdate = true;
 
-    terrain.rotation.y = lerp(terrain.rotation.y, state.mouseX * 0.018 + state.transition * 0.04, 0.04);
+    terrain.rotation.y = lerp(terrain.rotation.y, state.mouseX * 0.018 + state.globe * 0.025, 0.04);
     terrain.position.x = lerp(terrain.position.x, state.mouseX * -0.35, 0.04);
     terrain.position.z = lerp(terrain.position.z, state.scroll * 6 - state.globe * 2.8, 0.04);
     contourGroup.position.x = terrain.position.x;
     contourGroup.position.z = terrain.position.z;
     contourGroup.rotation.y = terrain.rotation.y;
-    contourMaterial.opacity = 0.18 + state.hero * 0.18 + state.projects * 0.26 + state.transition * 0.10 - state.about * 0.18;
-    contours.forEach((line, lineIndex) => {
-      const attr = line.geometry.getAttribute('position');
-      const phase = line.userData.phase + time * 0.34;
-      for (let i = 0; i < attr.count; i++) {
-        const t = i / (attr.count - 1);
-        const x = (t - 0.5) * line.userData.widthValue;
-        const z = line.userData.zBase + Math.sin(t * Math.PI * 4 + phase) * 0.9 + Math.sin(t * Math.PI * 9 + phase) * 0.22;
-        const lift = state.projects * Math.sin(x * 0.4 + lineIndex) * 0.32;
-        attr.setXYZ(i, x, -2.0 + terrainHeight(x, z, phase) * 0.78 + lift, z);
-      }
-      attr.needsUpdate = true;
-    });
+    contourMaterial.opacity = 0.18 + state.hero * 0.18 + state.projects * 0.26 + state.globe * 0.06 - state.about * 0.18;
+    if (contourFrame % 2 === 0) {
+      contours.forEach((line, lineIndex) => {
+        const attr = line.geometry.getAttribute('position');
+        const phase = line.userData.phase + time * 0.34;
+        for (let i = 0; i < attr.count; i++) {
+          const t = i / (attr.count - 1);
+          const x = (t - 0.5) * line.userData.widthValue;
+          const z = line.userData.zBase + Math.sin(t * Math.PI * 4 + phase) * 0.9 + Math.sin(t * Math.PI * 9 + phase) * 0.22;
+          const lift = state.projects * Math.sin(x * 0.4 + lineIndex) * 0.32;
+          attr.setXYZ(i, x, -2.0 + terrainHeight(x, z, phase) * 0.78 + lift, z);
+        }
+        attr.needsUpdate = true;
+      });
+    }
     gridGroup.position.z = terrain.position.z * 0.74;
-    gridMaterial.opacity = 0.1 + state.projects * 0.08 + state.transition * 0.1 - state.about * 0.07;
+    gridMaterial.opacity = 0.1 + state.projects * 0.08 + state.globe * 0.06 - state.about * 0.07;
 
     panelGroup.position.y = lerp(panelGroup.position.y, state.projects * 0.75 - state.about * 0.4, 0.04);
     panelMaterials.forEach((mat, index) => {
-      mat.opacity = (index === 0 ? 0.22 : 0.14) + state.projects * 0.2 + state.transition * 0.14 - state.about * 0.16;
+      mat.opacity = (index === 0 ? 0.22 : 0.14) + state.projects * 0.2 + state.globe * 0.06 - state.about * 0.16;
     });
     panels.forEach((panel) => {
       const base = panel.userData.base;
@@ -715,13 +691,13 @@ export function initDataTerrain() {
       panel.rotation.y = base.ry + state.mouseX * 0.025;
     });
 
-    const artifactOpacity = Math.max(0, state.projects * 1.08 - state.transition * 0.26 - state.globe * 0.44 - state.about * 0.3);
+    const artifactOpacity = Math.max(0, state.projects * 1.08 - state.globe * 0.52 - state.about * 0.3);
     artifactMaterials.forEach((material, index) => {
       const dotBoost = index > 2 ? 0.18 : 0;
       material.opacity = artifactOpacity * (0.34 + dotBoost);
     });
-    artifactGroup.position.y = lerp(artifactGroup.position.y, state.projects * 0.9 - state.transition * 0.46, 0.045);
-    artifactGroup.position.z = lerp(artifactGroup.position.z, -state.projects * 1.1 + state.transition * -1.7, 0.045);
+    artifactGroup.position.y = lerp(artifactGroup.position.y, state.projects * 0.9 - state.globe * 0.36, 0.045);
+    artifactGroup.position.z = lerp(artifactGroup.position.z, -state.projects * 1.1 + state.globe * -1.2, 0.045);
     artifacts.forEach((artifact, index) => {
       const base = artifact.userData.base;
       const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
@@ -734,11 +710,11 @@ export function initDataTerrain() {
       artifact.scale.setScalar(0.68 + state.projects * 0.22 + active * 0.44);
     });
 
-    scanMaterial.opacity = Math.max(0, state.projects * 0.5 + state.transition * 0.12 - state.globe * 0.22 - state.about * 0.2);
+    scanMaterial.opacity = Math.max(0, state.projects * 0.5 - state.globe * 0.34 - state.about * 0.2);
     scanGroup.position.set(
       lerp(scanGroup.position.x, (activeProjectIndex - 1) * 2.2 + state.mouseX * 0.2, 0.055),
       lerp(scanGroup.position.y, 0.92 + state.projects * 0.62, 0.055),
-      lerp(scanGroup.position.z, -7.9 - state.transition * 2.2, 0.055)
+      lerp(scanGroup.position.z, -7.9 - state.globe * 1.2, 0.055)
     );
     scanPlanes.forEach((plane, index) => {
       const offset = index - 1;
@@ -748,19 +724,6 @@ export function initDataTerrain() {
       plane.rotation.y = state.mouseX * 0.04 + offset * 0.03;
       plane.scale.setScalar(0.88 + state.projects * 0.2 + Math.sin(time * 1.4 + index) * 0.025);
     });
-
-    const tunnelOpacity = Math.max(0, state.transition * 0.92 + state.globe * 0.12 - state.about * 0.3);
-    tunnelMaterial.opacity = tunnelOpacity * 0.58;
-    tunnelGoldMaterial.opacity = tunnelOpacity * 0.42;
-    tunnelGroup.position.z = lerp(tunnelGroup.position.z, state.transition * 4.1 + state.globe * 4.2, 0.055);
-    tunnelGroup.position.y = lerp(tunnelGroup.position.y, state.transition * 0.55 - state.globe * 0.45, 0.055);
-    tunnelGroup.rotation.z = time * 0.08 + state.mouseX * 0.08;
-    tunnelGroup.children.forEach((ring, index) => {
-      const pulse = 1 + Math.sin(time * 2.0 + ring.userData.phase) * 0.08;
-      ring.scale.setScalar(pulse * (1 + state.transition * 0.48 + state.globe * 0.12));
-      ring.rotation.z = time * (0.14 + index * 0.01);
-    });
-
     projectBeacons.forEach((beacon, index) => {
       const distance = Math.abs(state.focusProject - index);
       const active = state.targetFocusProject === index ? 1 : Math.max(0, 1 - distance);
@@ -772,7 +735,7 @@ export function initDataTerrain() {
     });
 
     routeGroup.position.z = terrain.position.z * 0.45;
-    routeMaterial.opacity = 0.16 + state.projects * 0.22 + state.transition * 0.22 - state.about * 0.2;
+    routeMaterial.opacity = 0.16 + state.projects * 0.22 + state.globe * 0.12 - state.about * 0.2;
     packets.forEach((packet, index) => {
       const t = (time * (0.055 + index * 0.002) + packet.userData.phase) % 1;
       const lane = index % 3;
@@ -781,57 +744,50 @@ export function initDataTerrain() {
       packet.position.z = (3 - lane * 5) - t * 16 + routeGroup.position.z;
       const scale = 0.7 + Math.sin(t * Math.PI) * 1.6;
       packet.scale.setScalar(scale);
-      packet.material.opacity = (0.22 + state.projects * 0.34 + state.transition * 0.28) * (1 - state.about * 0.6);
+      packet.material.opacity = (0.22 + state.projects * 0.42 + state.globe * 0.18) * (1 - state.about * 0.6);
     });
 
-    glowMaterial.opacity = 0.035 + state.projects * 0.035 + state.transition * 0.04 - state.about * 0.03;
+    glowMaterial.opacity = 0.035 + state.projects * 0.035 + state.globe * 0.03 - state.about * 0.03;
 
     const projectX = (state.activeProject - 1) * 1.35;
     const heroWeight = Math.max(0, 1 - state.projects * 0.9);
-    const projectWeight = state.projects * (1 - state.transition * 0.7);
-    const transitionWeight = state.transition * (1 - state.globe * 0.42);
+    const projectWeight = state.projects * (1 - state.globe * 0.62);
     const globeWeight = state.globe * (1 - state.about * 0.55);
     const aboutWeight = state.about;
-    const weightTotal = Math.max(0.001, heroWeight + projectWeight + transitionWeight + globeWeight + aboutWeight);
+    const weightTotal = Math.max(0.001, heroWeight + projectWeight + globeWeight + aboutWeight);
 
     const targetCamX = (
       heroWeight * 0.0 +
       projectWeight * projectX +
-      transitionWeight * 0.1 +
       globeWeight * 0.74 +
       aboutWeight * 0.0
     ) / weightTotal + state.mouseX * (0.42 - state.about * 0.22);
     const targetCamY = (
       heroWeight * 6.3 +
       projectWeight * 4.25 +
-      transitionWeight * 3.8 +
       globeWeight * 4.9 +
       aboutWeight * 5.9
     ) / weightTotal + state.mouseY * -0.22;
     const targetCamZ = (
       heroWeight * 15.4 +
       projectWeight * 8.7 +
-      transitionWeight * 6.6 +
       globeWeight * 9.6 +
       aboutWeight * 14.2
     ) / weightTotal;
     const lookX = (
       heroWeight * 0.0 +
       projectWeight * projectX * 0.68 +
-      transitionWeight * 0.0 +
       globeWeight * 0.62
     ) / weightTotal + state.mouseX * 0.45;
     const lookY = (
       heroWeight * -0.45 +
       projectWeight * -0.75 +
-      transitionWeight * 0.06 +
       globeWeight * -0.35 +
       aboutWeight * -0.8
     ) / weightTotal;
     const lookZ = (
       heroWeight * -7.5 +
       projectWeight * -8.9 +
-      transitionWeight * -14.2 +
       globeWeight * -10.0 +
       aboutWeight * -8.5
     ) / weightTotal;

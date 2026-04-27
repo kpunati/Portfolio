@@ -28,7 +28,7 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const SPACING=52, RADIUS=130, REPEL=34, DRIFT=0.14, CONN=98, DOT_R=1.3;
-  let W, H, mouse={x:-999,y:-999}, nodes=[], scrollY=0;
+  let W, H, mouse={x:-999,y:-999}, nodes=[], grid=[], cols=0, rows=0, scrollY=0;
 
   window._particleHooks = window._particleHooks || { densityBoost: 0 };
 
@@ -39,10 +39,17 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   }
   function buildGrid(){
     nodes=[];
+    grid=[];
     const sp = SPACING;
-    const cols=Math.ceil(W/sp)+1, rows=Math.ceil(H/sp)+1;
-    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
-      nodes.push({ ox:c*sp, oy:r*sp, x:c*sp, y:r*sp, vx:0, vy:0, plum:Math.random()<0.09 });
+    cols=Math.ceil(W/sp)+1;
+    rows=Math.ceil(H/sp)+1;
+    for(let r=0;r<rows;r++) {
+      grid[r]=[];
+      for(let c=0;c<cols;c++){
+        const node = { ox:c*sp, oy:r*sp, x:c*sp, y:r*sp, vx:0, vy:0, row:r, col:c, plum:Math.random()<0.09 };
+        nodes.push(node);
+        grid[r][c]=node;
+      }
     }
   }
   window.addEventListener('resize', resize);
@@ -62,8 +69,8 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     nodes.forEach(n=>{
       const dx=mouse.x-n.x, dy=mouse.y-n.y;
       const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<RADIUS){ n.vx-=(dx/dist)*(RADIUS-dist)*0.012; n.vy-=(dy/dist)*(RADIUS-dist)*0.012; }
-      if(dist<REPEL){ n.vx-=(dx/dist)*2.2; n.vy-=(dy/dist)*2.2; }
+      if(dist > 0.001 && dist<RADIUS){ n.vx-=(dx/dist)*(RADIUS-dist)*0.012; n.vy-=(dy/dist)*(RADIUS-dist)*0.012; }
+      if(dist > 0.001 && dist<REPEL){ n.vx-=(dx/dist)*2.2; n.vy-=(dy/dist)*2.2; }
       n.vx+=(n.ox-n.x)*0.035; n.vy+=(n.oy-n.y)*0.035;
       n.vx*=0.78; n.vy*=0.78;
       n.vx+=(Math.random()-.5)*DRIFT;
@@ -71,17 +78,23 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
       n.x+=n.vx; n.y+=n.vy;
     });
 
-    for(let i=0;i<nodes.length;i++){
-      for(let j=i+1;j<nodes.length;j++){
-        const a=nodes[i],b=nodes[j];
-        const dx=a.x-b.x, dy=a.y-b.y;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        if(d<CONN){
-          const al=(1-d/CONN)*(0.18 + boost * 0.16) * baseAlpha;
-          ctx.beginPath();
-          ctx.strokeStyle=a.plum&&b.plum?`rgba(150,120,180,${al})`:`rgba(212,166,82,${al})`;
-          ctx.lineWidth=.5;
-          ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    const neighborOffsets = [[1,0],[0,1],[1,1],[-1,1],[2,0],[0,2]];
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const a=grid[r][c];
+        for(let k=0;k<neighborOffsets.length;k++){
+          const nc=c+neighborOffsets[k][0], nr=r+neighborOffsets[k][1];
+          if(nr<0 || nr>=rows || nc<0 || nc>=cols) continue;
+          const b=grid[nr][nc];
+          const dx=a.x-b.x, dy=a.y-b.y;
+          const d=Math.sqrt(dx*dx+dy*dy);
+          if(d<CONN){
+            const al=(1-d/CONN)*(0.2 + boost * 0.18) * baseAlpha;
+            ctx.beginPath();
+            ctx.strokeStyle=a.plum&&b.plum?`rgba(150,120,180,${al})`:`rgba(212,166,82,${al})`;
+            ctx.lineWidth=.5;
+            ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+          }
         }
       }
     }
