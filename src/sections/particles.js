@@ -2,7 +2,7 @@
 // Scroll reveal, tab switcher, hero particle canvas, Three.js DNA helix with scroll journey.
 // Called by main.js after markup is injected.
 
-export function initParticles() {
+export function initParticles(options = {}) {
 
 const revealEls = document.querySelectorAll('.reveal');
 const revealObs = new IntersectionObserver((entries) => {
@@ -21,12 +21,14 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   });
 });
 
+  if (options.prefersReducedMotion) return;
+
   (function(){
   const canvas = document.getElementById('hero-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const SPACING=52, RADIUS=130, REPEL=34, DRIFT=0.14, CONN=98, DOT_R=1.3;
-  let W, H, mouse={x:-999,y:-999}, nodes=[], scrollY=0, raf;
+  let W, H, mouse={x:-999,y:-999}, nodes=[], scrollY=0;
 
   window._particleHooks = window._particleHooks || { densityBoost: 0 };
 
@@ -37,7 +39,7 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   }
   function buildGrid(){
     nodes=[];
-    const sp = SPACING - ((window._particleHooks.densityBoost||0) * 8);
+    const sp = SPACING;
     const cols=Math.ceil(W/sp)+1, rows=Math.ceil(H/sp)+1;
     for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
       nodes.push({ ox:c*sp, oy:r*sp, x:c*sp, y:r*sp, vx:0, vy:0, plum:Math.random()<0.09 });
@@ -51,8 +53,11 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     ctx.clearRect(0,0,W,H);
     const scrollZone = scrollY / (document.body.scrollHeight - H);
     const inProjects = scrollZone > 0.12 && scrollZone < 0.45;
-    const downBias = inProjects ? 0.18 : 0;
-    const boost = (window._particleHooks.densityBoost||0);
+    const hooks = window._particleHooks || {};
+    const boost = hooks.densityBoost || 0;
+    const calm = hooks.aboutCalm || 0;
+    const downBias = Math.max(inProjects ? 0.18 : 0, (hooks.projectsDrift || 0) * 0.42);
+    const baseAlpha = Math.max(0.08, 1 - calm * 0.55);
 
     nodes.forEach(n=>{
       const dx=mouse.x-n.x, dy=mouse.y-n.y;
@@ -72,7 +77,7 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
         const dx=a.x-b.x, dy=a.y-b.y;
         const d=Math.sqrt(dx*dx+dy*dy);
         if(d<CONN){
-          const al=(1-d/CONN)*0.18;
+          const al=(1-d/CONN)*(0.18 + boost * 0.16) * baseAlpha;
           ctx.beginPath();
           ctx.strokeStyle=a.plum&&b.plum?`rgba(150,120,180,${al})`:`rgba(212,166,82,${al})`;
           ctx.lineWidth=.5;
@@ -84,7 +89,7 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     nodes.forEach(n=>{
       ctx.beginPath();
       ctx.arc(n.x,n.y,DOT_R+(boost*.4),0,Math.PI*2);
-      ctx.fillStyle=n.plum?`rgba(150,120,180,${0.22+boost*.3})`:`rgba(212,166,82,${0.22+boost*.3})`;
+      ctx.fillStyle=n.plum?`rgba(150,120,180,${(0.22+boost*.42) * baseAlpha})`:`rgba(212,166,82,${(0.22+boost*.42) * baseAlpha})`;
       ctx.fill();
     });
     requestAnimationFrame(draw);
@@ -189,7 +194,8 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     const s = helixGroup.scale.x + (targetScale - helixGroup.scale.x) * 0.06;
     helixGroup.scale.setScalar(s);
 
-    helixGroup.rotation.y = time * 0.28 + currentRotY;
+    const helixBoost = (window._particleHooks && window._particleHooks.helixBoost) || 0;
+    helixGroup.rotation.y = time * (0.28 + helixBoost) + currentRotY;
 
     const breathe = 1 + Math.sin(time * 0.5) * 0.015;
     helix1.scale.setScalar(breathe);

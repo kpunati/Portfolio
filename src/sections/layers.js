@@ -1,169 +1,212 @@
-// src/sections/layers.js — 5-Layer cinematic experience upgrade
-// Layer 1: Hero pressure — particle density + helix speed ramp on hover dwell
-// Layer 2: Projects life — card shimmer, downward particle bias, aurora pre-bleed
-// Layer 3: Transition zone — grid convergence, coordinate floaters, globe glow bleed
-// Layer 4: Globe parallax rise — surfaces slower than scroll, dots-first reveal
-// Layer 5: About cooldown — quieter particles, softer palette
+// src/sections/layers.js - cinematic scroll choreography
 
 export function initLayers() {
-  // ── Shared state ─────────────────────────────────────────────────────────────────────
-  let heroHoverStart = null;
-  let heroHoverPressure = 0;
+  const root = document.documentElement;
   const hooks = window._particleHooks = window._particleHooks || {};
+  const globeHooks = window._globeHooks = window._globeHooks || {};
 
-  // ── LAYER 1: Hero pressure system ───────────────────────────────────────────────
   const hero = document.getElementById('hero');
-  if (hero) {
-    hero.addEventListener('mouseenter', () => { heroHoverStart = performance.now(); });
-    hero.addEventListener('mouseleave', () => {
-      heroHoverStart = null;
-      heroHoverPressure = 0;
-      hooks.densityBoost = 0;
-      hooks.helixBoost   = 0;
-    });
+  const projects = document.getElementById('projects');
+  const aurora = document.getElementById('aurora-bleed');
+  const tz = document.getElementById('transition-zone');
+  const tzCanvas = document.getElementById('tz-canvas');
+  const tzCoords = document.getElementById('tz-coords');
+  const tzReticle = document.getElementById('tz-reticle');
+  const globeWrap = document.getElementById('globe-parallax-wrap');
+  const globeShell = document.getElementById('globe-embed-shell');
+  const about = document.getElementById('about');
+
+  if (about) about.classList.add('about-cooldown');
+  if (globeShell) globeShell.classList.add('globe-stage');
+
+  let hoverStart = null;
+  let pressure = 0;
+  let ticking = true;
+
+  const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+  const smooth = (from, to, rate) => from + (to - from) * rate;
+
+  function sectionProgress(el, start = 0.85, end = 0.15) {
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight || 1;
+    return clamp((vh * start - rect.top) / (vh * (start - end) + rect.height * 0.35));
   }
 
-  // ── LAYER 2: Aurora bleed visibility ──────────────────────────────────────────
-  const aurora = document.getElementById('aurora-bleed');
-  const projectsSection = document.getElementById('projects');
+  if (hero) {
+    hero.addEventListener('mouseenter', () => { hoverStart = performance.now(); });
+    hero.addEventListener('mousemove', () => {
+      if (hoverStart === null) hoverStart = performance.now();
+    });
+    hero.addEventListener('mouseleave', () => { hoverStart = null; });
+  }
 
-  // ── LAYER 3: Transition zone ────────────────────────────────────────────────────
-  const tz        = document.getElementById('transition-zone');
-  const tzCanvas  = document.getElementById('tz-canvas');
-  const tzCoords  = document.getElementById('tz-coords');
-  const tzReticle = document.getElementById('tz-reticle');
-
-  const COORDS = [
-    '28.6°N  77.2°E',
-    '35.6°N 139.7°E',
-    '51.5°N   0.1°W',
-    '40.7°N  74.0°W',
-    '37.7°N 122.4°W',
-    '1.3°N  103.8°E',
-    '48.8°N   2.3°E',
-    '19.0°N  72.8°E',
-    '55.7°N  37.6°E',
-    '-33.8°S 151.2°E',
+  const coordLabels = [
+    '28.6 N 77.2 E',
+    '35.6 N 139.7 E',
+    '37.7 N 122.4 W',
+    '51.5 N 0.1 W',
+    'ISS ALT 408 KM',
+    'VEL 27,600 KM/H',
+    'M4.8 SIGNAL',
+    'FIRE CLUSTER 91',
+    'ORBIT 51.6 DEG',
+    'TRACE LOCK'
   ];
 
-  function spawnCoords() {
+  function seedCoords() {
     if (!tzCoords) return;
     tzCoords.innerHTML = '';
-    COORDS.forEach((label, i) => {
+    coordLabels.forEach((label, index) => {
       const el = document.createElement('div');
       el.className = 'tz-coord-item';
       el.textContent = label;
-      el.style.left  = (8 + Math.random() * 80) + '%';
-      el.style.top   = (10 + Math.random() * 75) + '%';
-      el.style.animationDelay = (i * 0.65) + 's';
-      el.style.animationDuration = (5 + Math.random() * 4) + 's';
+      el.style.left = `${8 + (index * 17) % 78}%`;
+      el.style.top = `${12 + (index * 29) % 70}%`;
+      el.style.animationDelay = `${index * 0.42}s`;
+      el.style.animationDuration = `${6 + (index % 4) * 1.4}s`;
       tzCoords.appendChild(el);
     });
   }
 
-  function initTZCanvas() {
-    if (!tzCanvas) return;
-    const ctx = tzCanvas.getContext('2d');
-    let W, H;
+  let tzCtx = null;
+  let tzW = 0;
+  let tzH = 0;
+  let tzTime = 0;
 
-    function resize() {
-      W = tzCanvas.width  = tzCanvas.offsetWidth  || 800;
-      H = tzCanvas.height = tzCanvas.offsetHeight || 400;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    function drawGrid(p) {
-      ctx.clearRect(0, 0, W, H);
-      const cx = W / 2, cy = H / 2;
-      const alpha = Math.min(p * 1.4, 0.7);
-      const lines = 12;
-      for (let i = 0; i < lines; i++) {
-        const frac   = i / lines;
-        const startX = frac * W;
-        const endX   = cx + (startX - cx) * (1 - p);
-        const endY   = cy + (0 - cy)      * (1 - p);
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = 'rgba(212,166,82,0.35)';
-        ctx.lineWidth   = 0.8;
-        ctx.beginPath(); ctx.moveTo(startX, 0); ctx.lineTo(endX, endY); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(startX, H); ctx.lineTo(endX, H - endY); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, frac * H); ctx.lineTo(W - endX, frac * H * (1 - p) + cy * p); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(W, frac * H); ctx.lineTo(endX,     frac * H * (1 - p) + cy * p); ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-      // Globe glow bleed from bottom
-      const glowAlpha = p * 0.45;
-      const grd = ctx.createRadialGradient(cx, H + 60, 0, cx, H + 60, H * 0.85);
-      grd.addColorStop(0,   'rgba(122,90,143,' + glowAlpha + ')');
-      grd.addColorStop(0.4, 'rgba(212,166,82,' + (glowAlpha * 0.4) + ')');
-      grd.addColorStop(1,   'rgba(0,0,0,0)');
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    tzCanvas._setProgress = p => drawGrid(p);
-    drawGrid(0);
+  function resizeTZ() {
+    if (!tzCanvas || !tz) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    tzW = Math.max(1, tz.clientWidth);
+    tzH = Math.max(1, tz.clientHeight);
+    tzCanvas.width = Math.floor(tzW * dpr);
+    tzCanvas.height = Math.floor(tzH * dpr);
+    tzCanvas.style.width = `${tzW}px`;
+    tzCanvas.style.height = `${tzH}px`;
+    tzCtx = tzCanvas.getContext('2d');
+    tzCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  initTZCanvas();
-  spawnCoords();
+  function drawTransition(progress, dt) {
+    if (!tzCtx) return;
+    tzTime += dt * 0.001;
+    tzCtx.clearRect(0, 0, tzW, tzH);
 
-  // ── LAYER 4: Globe parallax wrap ──────────────────────────────────────────────
-  const globeWrap = document.getElementById('globe-parallax-wrap');
+    const cx = tzW / 2;
+    const cy = tzH / 2;
+    const eased = progress * progress * (3 - 2 * progress);
 
-  // ── LAYER 5: About cooldown ────────────────────────────────────────────────────
-  const aboutSection = document.getElementById('about');
-  if (aboutSection) aboutSection.classList.add('about-cooldown');
+    const bg = tzCtx.createLinearGradient(0, 0, 0, tzH);
+    bg.addColorStop(0, `rgba(18,16,14,${0.72 - eased * 0.42})`);
+    bg.addColorStop(0.55, `rgba(7,6,8,${0.86 + eased * 0.12})`);
+    bg.addColorStop(1, `rgba(2,2,4,${0.96})`);
+    tzCtx.fillStyle = bg;
+    tzCtx.fillRect(0, 0, tzW, tzH);
 
-  // ── Main RAF scroll loop ────────────────────────────────────────────────────────
-  let ticking = false;
+    const lines = 18;
+    for (let i = 0; i <= lines; i++) {
+      const x = (i / lines) * tzW;
+      const y = (i / lines) * tzH;
+      const wave = Math.sin(tzTime * 1.4 + i * 0.8) * 16;
+      const alpha = (0.08 + eased * 0.42) * (1 - Math.abs(i / lines - 0.5) * 0.55);
 
-  function onFrame() {
-    // Layer 1: hero pressure ramp
-    if (heroHoverStart !== null) {
-      heroHoverPressure = Math.min((performance.now() - heroHoverStart) / 4000, 1);
-    } else {
-      heroHoverPressure = Math.max(heroHoverPressure - 0.02, 0);
+      tzCtx.strokeStyle = `rgba(212,166,82,${alpha})`;
+      tzCtx.lineWidth = 0.65;
+      tzCtx.beginPath();
+      tzCtx.moveTo(x, 0);
+      tzCtx.quadraticCurveTo(cx + wave, cy - tzH * 0.16, cx + (x - cx) * (1 - eased) * 0.28, cy);
+      tzCtx.stroke();
+
+      tzCtx.strokeStyle = `rgba(122,90,143,${alpha * 0.9})`;
+      tzCtx.beginPath();
+      tzCtx.moveTo(tzW, y);
+      tzCtx.quadraticCurveTo(cx + tzW * 0.22, cy + wave, cx, cy + (y - cy) * (1 - eased) * 0.24);
+      tzCtx.stroke();
+
+      tzCtx.strokeStyle = `rgba(212,166,82,${alpha * 0.75})`;
+      tzCtx.beginPath();
+      tzCtx.moveTo(0, y);
+      tzCtx.quadraticCurveTo(cx - tzW * 0.22, cy - wave, cx, cy + (y - cy) * (1 - eased) * 0.24);
+      tzCtx.stroke();
     }
-    hooks.densityBoost = heroHoverPressure * 0.7;
-    hooks.helixBoost   = heroHoverPressure * 0.004;
 
-    // Layer 2: aurora bleed
-    if (aurora && projectsSection) {
-      const pr = projectsSection.getBoundingClientRect();
-      aurora.classList.toggle('visible', pr.bottom < window.innerHeight * 1.3 && pr.bottom > 0);
-    }
+    const pulse = 0.75 + Math.sin(tzTime * 2.2) * 0.25;
+    const bottomGlow = tzCtx.createRadialGradient(cx, tzH + 40, 0, cx, tzH + 40, tzH * 0.95);
+    bottomGlow.addColorStop(0, `rgba(96,119,255,${0.2 * eased})`);
+    bottomGlow.addColorStop(0.28, `rgba(122,90,143,${0.42 * eased * pulse})`);
+    bottomGlow.addColorStop(0.58, `rgba(212,166,82,${0.2 * eased})`);
+    bottomGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    tzCtx.fillStyle = bottomGlow;
+    tzCtx.fillRect(0, 0, tzW, tzH);
 
-    // Layer 3: TZ progress
-    if (tz && tzCanvas && tzCanvas._setProgress) {
-      const tzR = tz.getBoundingClientRect();
-      const p   = Math.max(0, Math.min(1, 1 - (tzR.top / window.innerHeight)));
-      tzCanvas._setProgress(p);
-      if (tzReticle) tzReticle.classList.toggle('visible', p > 0.15);
-      tz.style.background = 'rgb(' + Math.round(8 - p*2) + ',' + Math.round(7 - p*2) + ',' + Math.round(10 - p*2) + ')';
-    }
+    const lock = tzCtx.createRadialGradient(cx, cy, 0, cx, cy, 180);
+    lock.addColorStop(0, `rgba(255,34,68,${0.18 * eased * pulse})`);
+    lock.addColorStop(0.34, `rgba(212,166,82,${0.12 * eased})`);
+    lock.addColorStop(1, 'rgba(0,0,0,0)');
+    tzCtx.fillStyle = lock;
+    tzCtx.fillRect(0, 0, tzW, tzH);
 
-    // Layer 4: globe parallax
+    tzCtx.fillStyle = `rgba(244,239,231,${0.025 * eased})`;
+    for (let y = 0; y < tzH; y += 5) tzCtx.fillRect(0, y, tzW, 1);
+  }
+
+  seedCoords();
+  resizeTZ();
+  window.addEventListener('resize', resizeTZ);
+
+  let lastTime = performance.now();
+  function frame(now) {
+    if (!ticking) return;
+    requestAnimationFrame(frame);
+    const dt = Math.min(34, now - lastTime);
+    lastTime = now;
+
+    const heroRect = hero ? hero.getBoundingClientRect() : null;
+    const heroVisible = heroRect ? heroRect.bottom > 0 && heroRect.top < window.innerHeight : false;
+    const dwell = hoverStart && heroVisible ? clamp((now - hoverStart) / 3200) : 0;
+    pressure = smooth(pressure, dwell, hoverStart ? 0.055 : 0.08);
+
+    const projectsProgress = sectionProgress(projects, 1.02, 0.12);
+    const projectsRect = projects ? projects.getBoundingClientRect() : null;
+    const auroraProgress = projectsRect
+      ? clamp((window.innerHeight - projectsRect.bottom + 360) / 520)
+      : 0;
+
+    const tzRect = tz ? tz.getBoundingClientRect() : null;
+    const tzProgress = tzRect ? clamp((window.innerHeight * 0.86 - tzRect.top) / (window.innerHeight * 0.95)) : 0;
+    const globeRect = globeWrap ? globeWrap.getBoundingClientRect() : null;
+    const globeProgress = globeRect ? clamp((window.innerHeight * 0.94 - globeRect.top) / (window.innerHeight * 0.72)) : 0;
+    const aboutProgress = sectionProgress(about, 0.9, 0.22);
+
+    hooks.densityBoost = pressure * 1.2 + projectsProgress * 0.28;
+    hooks.helixBoost = pressure * 1.05 + projectsProgress * 0.18;
+    hooks.projectsDrift = projectsProgress;
+    hooks.aboutCalm = aboutProgress;
+    globeHooks.emerge = globeProgress;
+
+    root.style.setProperty('--hero-pressure', pressure.toFixed(3));
+    root.style.setProperty('--projects-depth', projectsProgress.toFixed(3));
+    root.style.setProperty('--aurora-progress', auroraProgress.toFixed(3));
+    root.style.setProperty('--tz-progress', tzProgress.toFixed(3));
+    root.style.setProperty('--globe-emerge', globeProgress.toFixed(3));
+    root.style.setProperty('--about-calm', aboutProgress.toFixed(3));
+
+    if (aurora) aurora.classList.toggle('visible', auroraProgress > 0.02);
+    if (tzReticle) tzReticle.classList.toggle('visible', tzProgress > 0.1);
+    if (tz) tz.classList.toggle('is-locked', tzProgress > 0.32);
+    if (projects) projects.classList.toggle('projects-active', projectsProgress > 0.12);
+    if (globeShell) globeShell.classList.toggle('is-emerging', globeProgress > 0.02 && globeProgress < 0.82);
+
+    drawTransition(tzProgress, dt);
+
     if (globeWrap) {
-      const gr     = globeWrap.getBoundingClientRect();
-      const offset = (gr.top - window.innerHeight / 2) * 0.18;
-      globeWrap.style.transform = 'translateY(' + offset + 'px)';
+      const lift = (1 - globeProgress) * 160 - tzProgress * 28;
+      const scale = 0.965 + globeProgress * 0.035;
+      globeWrap.style.transform = `translate3d(0, ${lift.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
     }
-
-    // Layer 5: about cooldown softens particles
-    if (aboutSection) {
-      const ar = aboutSection.getBoundingClientRect();
-      const inAbout = ar.top < window.innerHeight && ar.bottom > 0;
-      if (inAbout) hooks.densityBoost = hooks.densityBoost * 0.3;
-    }
-
-    ticking = false;
   }
 
-  window.addEventListener('scroll', () => {
-    if (!ticking) { requestAnimationFrame(onFrame); ticking = true; }
-  }, { passive: true });
+  requestAnimationFrame(frame);
 
-  requestAnimationFrame(onFrame);
+  window.addEventListener('pagehide', () => { ticking = false; });
 }

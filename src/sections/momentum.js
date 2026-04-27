@@ -35,6 +35,15 @@ export function initMomentum() {
     document.getElementById('rail-line-2'),
     document.getElementById('rail-line-3')
   ];
+  var commandStrip = document.getElementById('command-strip');
+  var commandSection = document.getElementById('command-section');
+  var commandProgress = document.getElementById('command-progress-bar');
+  var labels = {
+    hero: 'Hero',
+    projects: 'Projects',
+    dashboards: 'Live Dashboards',
+    about: 'About'
+  };
 
   // Rail click navigation
   document.querySelectorAll('.rail-node').forEach(function(node){
@@ -44,6 +53,147 @@ export function initMomentum() {
       if(el) el.scrollIntoView({behavior:'smooth'});
     });
   });
+
+  var projectCards = Array.prototype.slice.call(document.querySelectorAll('.project-card'));
+  var projectSteps = Array.prototype.slice.call(document.querySelectorAll('.project-stage-steps span'));
+  var activeProjectIndex = -1;
+
+  function setActiveProject(index) {
+    if(index === activeProjectIndex) return;
+    activeProjectIndex = index;
+    projectCards.forEach(function(card, cardIndex){
+      if(cardIndex === index) card.classList.add('is-active');
+      else card.classList.remove('is-active');
+    });
+    projectSteps.forEach(function(step, stepIndex){
+      if(stepIndex === index) step.classList.add('is-active');
+      else step.classList.remove('is-active');
+    });
+    document.documentElement.style.setProperty('--active-project', String(Math.max(0, index)));
+    window.dispatchEvent(new CustomEvent('portfolio:project-focus', { detail: { index: index } }));
+  }
+
+  function updateProjectFocus() {
+    if(!projectCards.length) return;
+    var viewportCenter = window.innerHeight * 0.5;
+    var bestIndex = -1;
+    var bestDistance = Infinity;
+    projectCards.forEach(function(card, index){
+      var rect = card.getBoundingClientRect();
+      if(rect.bottom < 120 || rect.top > window.innerHeight - 80) return;
+      var center = rect.top + rect.height * 0.5;
+      var distance = Math.abs(center - viewportCenter);
+      if(distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+    setActiveProject(bestIndex);
+  }
+
+  projectCards.forEach(function(card, index){
+    card.addEventListener('mousemove', function(event){
+      var rect = card.getBoundingClientRect();
+      var x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+      var y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+      card.style.setProperty('--tilt-x', (-y * 4.5).toFixed(2) + 'deg');
+      card.style.setProperty('--tilt-y', (x * 5.5).toFixed(2) + 'deg');
+    });
+    card.addEventListener('mouseenter', function(){ setActiveProject(index); });
+    card.addEventListener('focus', function(){ setActiveProject(index); });
+    card.addEventListener('mouseleave', function(){
+      card.style.setProperty('--tilt-x', '0deg');
+      card.style.setProperty('--tilt-y', '0deg');
+      updateProjectFocus();
+    });
+  });
+
+  var contactModal = document.getElementById('contact-modal');
+  var contactForm = document.getElementById('contact-form');
+  var contactStatus = document.getElementById('contact-status');
+  var contactSubmit = contactForm ? contactForm.querySelector('button[type="submit"]') : null;
+  var lastFocus = null;
+
+  function openContactModal() {
+    if(!contactModal) return;
+    lastFocus = document.activeElement;
+    contactModal.classList.add('open');
+    contactModal.setAttribute('aria-hidden', 'false');
+    if(contactStatus) {
+      contactStatus.textContent = '';
+      contactStatus.classList.remove('success', 'error');
+    }
+    document.body.style.overflow = 'hidden';
+    var firstInput = contactModal.querySelector('input, textarea, button');
+    if(firstInput) firstInput.focus();
+  }
+
+  function closeContactModal() {
+    if(!contactModal) return;
+    contactModal.classList.remove('open');
+    contactModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if(lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+  }
+
+  document.querySelectorAll('[data-contact-open]').forEach(function(trigger){
+    trigger.addEventListener('click', openContactModal);
+  });
+  document.querySelectorAll('[data-contact-close]').forEach(function(trigger){
+    trigger.addEventListener('click', closeContactModal);
+  });
+  document.addEventListener('keydown', function(event){
+    if(event.key === 'Escape' && contactModal && contactModal.classList.contains('open')) closeContactModal();
+  });
+  if(contactForm) {
+    contactForm.addEventListener('submit', async function(event){
+      event.preventDefault();
+      var formData = new FormData(contactForm);
+      var payload = {
+        name: String(formData.get('name') || '').trim(),
+        email: String(formData.get('email') || '').trim(),
+        message: String(formData.get('message') || '').trim()
+      };
+
+      if(contactStatus) {
+        contactStatus.textContent = 'Transmitting signal...';
+        contactStatus.classList.remove('success', 'error');
+      }
+      if(contactSubmit) {
+        contactSubmit.disabled = true;
+        contactSubmit.textContent = 'Sending...';
+      }
+
+      try {
+        var response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        var result = await response.json().catch(function(){ return {}; });
+
+        if(!response.ok) {
+          throw new Error(result.error || 'Message could not be sent.');
+        }
+
+        if(contactStatus) {
+          contactStatus.textContent = 'Signal sent. I will reply directly from my inbox.';
+          contactStatus.classList.add('success');
+        }
+        contactForm.reset();
+      } catch(error) {
+        if(contactStatus) {
+          contactStatus.textContent = error.message || 'Message could not be sent. Please try again.';
+          contactStatus.classList.add('error');
+        }
+      } finally {
+        if(contactSubmit) {
+          contactSubmit.disabled = false;
+          contactSubmit.textContent = 'Prepare Signal';
+        }
+      }
+    });
+  }
 
   function updateRail(){
     if(!rail) return;
@@ -67,142 +217,25 @@ export function initMomentum() {
       if(i < activeIdx) line.classList.add('active');
       else line.classList.remove('active');
     });
+
+    if(commandStrip) {
+      if(SY > VH * 0.35) commandStrip.classList.add('visible');
+      else commandStrip.classList.remove('visible');
+    }
+    if(commandSection) commandSection.textContent = labels[sections[activeIdx]] || 'Portfolio';
+    if(commandProgress) {
+      var pageHeight = Math.max(1, document.body.scrollHeight - VH);
+      commandProgress.style.width = (clamp(SY / pageHeight, 0, 1) * 100).toFixed(1) + '%';
+    }
+    updateProjectFocus();
   }
 
   /* ────────────────────────────────────────────────────────────
-     2. AURORA BLEED — fade in as user nears bottom of projects
+     2. RAF LOOP
   ──────────────────────────────────────────────────────────── */
-  var auroraBleed = document.getElementById('aurora-bleed');
-  var projectsSection = document.getElementById('projects');
-
-  function updateAurora(){
-    if(!auroraBleed || !projectsSection) return;
-    var rect = projectsSection.getBoundingClientRect();
-    var VH = window.innerHeight;
-    var progress = clamp((VH - rect.bottom + 200) / 300, 0, 1);
-    auroraBleed.style.opacity = progress;
-  }
-
-  /* ────────────────────────────────────────────────────────────
-     3. TRANSITION ZONE — canvas grid convergence + coord floaters
-  ──────────────────────────────────────────────────────────── */
-  var tzCanvas = document.getElementById('tz-canvas');
-  var tzReticle = document.getElementById('tz-reticle');
-  var tzCoords  = document.getElementById('tz-coords');
-  var tzZone    = document.getElementById('transition-zone');
-  var tzCtx     = tzCanvas ? tzCanvas.getContext('2d') : null;
-
-  var coordPool = [
-    '28.6°N  77.2°E','35.6°N 139.6°E','-33.8°S 151.2°E','51.5°N  0.1°W',
-    '40.7°N  74.0°W','-23.5°S  46.6°W','55.7°N  37.6°E','1.3°N  103.8°E',
-    '48.8°N   2.3°E','19.4°N  99.1°W','-26.2°S  28.0°E','30.0°N  31.2°E',
-    'ALT: 408 KM','VEL: 27,600 KM/H','INC: 51.6°','ECC: 0.0002',
-    'M4.2 — HONSHU','M5.1 — CHILE','FIRE: -15.2°S 130.1°E'
-  ];
-  var lastCoordSpawn = 0;
-
-  function spawnCoord(){
-    if(!tzCoords) return;
-    var text = coordPool[Math.floor(Math.random()*coordPool.length)];
-    var el = document.createElement('div');
-    el.className = 'tz-coord-item';
-    el.textContent = text;
-    el.style.left = (10 + Math.random()*75) + '%';
-    el.style.bottom = (5 + Math.random()*30) + '%';
-    el.style.animationDelay = (Math.random()*1.5) + 's';
-    el.style.animationDuration = (5 + Math.random()*4) + 's';
-    tzCoords.appendChild(el);
-    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 9000);
-  }
-
-  function resizeTZ(){
-    if(!tzCanvas || !tzZone) return;
-    tzCanvas.width  = tzZone.clientWidth;
-    tzCanvas.height = tzZone.clientHeight;
-  }
-  if(tzZone) new ResizeObserver(resizeTZ).observe(tzZone);
-  resizeTZ();
-
-  var tzT = 0;
-  function drawTZ(dt){
-    if(!tzCtx || !tzCanvas) return;
-    var W = tzCanvas.width, H = tzCanvas.height;
-    tzCtx.clearRect(0,0,W,H);
-
-    var rect = tzZone ? tzZone.getBoundingClientRect() : null;
-    if(!rect) return;
-    var VH = window.innerHeight;
-    var progress = clamp(1 - (rect.top / VH), 0, 1);
-    if(progress <= 0) return;
-
-    if(tzReticle){
-      if(progress > 0.15) tzReticle.classList.add('visible');
-      else tzReticle.classList.remove('visible');
-    }
-
-    if(progress > 0.1 && dt - lastCoordSpawn > 1200){
-      spawnCoord(); lastCoordSpawn = dt;
-    }
-
-    var cx = W/2, cy = H/2;
-    tzT += 0.012;
-
-    var LINES = 14;
-    for(var i=0;i<LINES;i++){
-      var frac = i/LINES;
-      var wave = Math.sin(tzT + frac*Math.PI*2)*0.04;
-      var alpha = clamp(progress*0.55 + wave, 0, 0.55);
-      tzCtx.beginPath();
-      tzCtx.moveTo(0, frac*H);
-      tzCtx.quadraticCurveTo(W*0.3, cy + (frac-0.5)*H*0.4, cx + Math.sin(tzT*0.5)*20, cy + Math.cos(tzT*0.3+frac)*15);
-      tzCtx.strokeStyle = 'rgba(212,166,82,'+alpha*0.4+')';
-      tzCtx.lineWidth = 0.6;
-      tzCtx.stroke();
-      tzCtx.beginPath();
-      tzCtx.moveTo(W, frac*H);
-      tzCtx.quadraticCurveTo(W*0.7, cy + (frac-0.5)*H*0.4, cx + Math.sin(tzT*0.5)*20, cy + Math.cos(tzT*0.3+frac)*15);
-      tzCtx.strokeStyle = 'rgba(122,90,143,'+alpha*0.3+')';
-      tzCtx.lineWidth = 0.5;
-      tzCtx.stroke();
-    }
-
-    var gAlpha = (0.12 + Math.sin(tzT*1.8)*0.06) * progress;
-    var grd = tzCtx.createRadialGradient(cx,cy,0,cx,cy,160);
-    grd.addColorStop(0,'rgba(255,34,68,'+gAlpha+')');
-    grd.addColorStop(0.4,'rgba(212,166,82,'+gAlpha*0.5+')');
-    grd.addColorStop(1,'rgba(0,0,0,0)');
-    tzCtx.fillStyle = grd;
-    tzCtx.fillRect(0,0,W,H);
-
-    for(var y=0;y<H;y+=4){
-      tzCtx.fillStyle = 'rgba(0,0,0,0.03)';
-      tzCtx.fillRect(0,y,W,1);
-    }
-  }
-
-  /* ────────────────────────────────────────────────────────────
-     4. GLOBE PARALLAX RISE
-  ──────────────────────────────────────────────────────────── */
-  var globeWrap = document.getElementById('globe-parallax-wrap');
-
-  function updateGlobeParallax(){
-    if(!globeWrap) return;
-    var rect = globeWrap.getBoundingClientRect();
-    var VH = window.innerHeight;
-    var progress = clamp((VH - rect.top) / VH, 0, 1);
-    var offset = (1 - progress) * 80;
-    globeWrap.style.transform = 'translateY('+offset+'px)';
-  }
-
-  /* ────────────────────────────────────────────────────────────
-     5. RAF LOOP
-  ──────────────────────────────────────────────────────────── */
-  function loop(dt){
+  function loop(){
     requestAnimationFrame(loop);
     updateRail();
-    updateAurora();
-    drawTZ(dt);
-    updateGlobeParallax();
   }
   requestAnimationFrame(loop);
 

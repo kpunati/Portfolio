@@ -24,8 +24,22 @@ export const markup = `
   </div>
 </nav>
 
-<canvas id="hero-canvas"  aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
-<canvas id="helix-canvas" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
+<div class="command-strip" id="command-strip" aria-label="Portfolio quick actions">
+  <div class="command-status" aria-hidden="true">
+    <span class="command-dot"></span>
+    <span id="command-section">Hero</span>
+  </div>
+  <div class="command-progress" aria-hidden="true"><span id="command-progress-bar"></span></div>
+  <div class="command-actions">
+    <a href="#projects" aria-label="Jump to projects">Projects</a>
+    <a href="#dashboards" aria-label="Jump to live dashboards">Dashboards</a>
+    <button type="button" data-contact-open aria-label="Open contact form">Contact</button>
+  </div>
+</div>
+
+<canvas id="terrain-canvas" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+<canvas id="hero-canvas"  aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
+<canvas id="helix-canvas" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
 
 <!-- SKIP LINK -->
 <a href="#main-content" class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0">Skip to content</a>
@@ -47,7 +61,7 @@ export const markup = `
     <li><a href="#dashboards">Dashboards</a></li>
     <li><a href="#about">About</a></li>
   </ul>
-  <a href="mailto:hello@karthikpunati.com" class="btn nav-cta nav-cta-desktop" aria-label="Get in touch via email">Get in Touch</a>
+  <button type="button" class="btn nav-cta nav-cta-desktop" data-contact-open aria-label="Open contact form">Get in Touch</button>
   <button class="nav-mobile-toggle" aria-label="Open menu" aria-expanded="false">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
@@ -118,10 +132,20 @@ export const markup = `
     <p class="section-eyebrow reveal">What I&apos;ve Built</p>
     <h2 class="section-heading reveal reveal-delay-1" id="projects-heading">Projects</h2>
     <p class="section-sub reveal reveal-delay-2">Each project bridges data and product — built end-to-end, from raw pipeline to polished interface.</p>
+    <div class="project-scroll-stage">
+      <div class="project-stage-copy reveal reveal-delay-3" aria-hidden="true">
+        <div class="project-stage-kicker">Scroll Protocol</div>
+        <div class="project-stage-title">Three active systems come online as the camera drops into the observatory.</div>
+        <div class="project-stage-steps">
+          <span><b>01</b> Signal ingestion</span>
+          <span><b>02</b> Model reasoning</span>
+          <span><b>03</b> Automated distribution</span>
+        </div>
+      </div>
     <div class="projects-grid">
 
       <!-- Stock Sentiment -->
-      <a href="#dashboards" class="project-card reveal reveal-delay-1" aria-label="Stock Sentiment Analysis — view dashboard">
+      <a href="#dashboards" class="project-card reveal reveal-delay-1" data-project-index="0" aria-label="Stock Sentiment Analysis — view dashboard">
         <div class="project-card-header">
           <div class="project-card-icon" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -135,6 +159,16 @@ export const markup = `
         <p class="project-card-eyebrow">BI Dashboard</p>
         <h3 class="project-card-title">Stock Sentiment Analysis</h3>
         <p class="project-card-desc">Real-time NLP pipeline that aggregates financial news and social signals to produce sentiment scores for equities. Visualised in an interactive dashboard with trend overlays.</p>
+        <div class="project-card-status" aria-hidden="true">
+          <span>Market signal</span><b>Dashboard-linked</b>
+        </div>
+        <div class="project-telemetry telemetry-market" aria-hidden="true">
+          <div class="telemetry-topline"><span>Signal Feed</span><span>+18.4%</span></div>
+          <div class="market-line"></div>
+          <div class="market-bars">
+            <span style="--h:34%"></span><span style="--h:58%"></span><span style="--h:42%"></span><span style="--h:76%"></span><span style="--h:61%"></span><span style="--h:88%"></span><span style="--h:54%"></span>
+          </div>
+        </div>
         <div class="project-card-chips">
           <span class="chip chip-gold">Python</span>
           <span class="chip chip-gold">NLP</span>
@@ -144,7 +178,7 @@ export const markup = `
       </a>
 
       <!-- Neural Kitchen -->
-      <a href="https://neuralkitchen.vercel.app" class="project-card reveal reveal-delay-2" target="_blank" rel="noopener noreferrer" aria-label="Neural Kitchen">
+      <a href="https://neuralkitchen.vercel.app" class="project-card reveal reveal-delay-2" data-project-index="1" target="_blank" rel="noopener noreferrer" aria-label="Neural Kitchen">
         <div class="project-card-header">
           <div class="project-card-icon" style="background:var(--color-secondary-hl);border-color:rgba(122,90,143,0.2);color:#B8A0CC" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
@@ -156,6 +190,14 @@ export const markup = `
         <p class="project-card-eyebrow" style="color:#B8A0CC">AI App</p>
         <h3 class="project-card-title">Neural Kitchen</h3>
         <p class="project-card-desc">AI-powered web app that generates recipes from whatever ingredients you have on hand. Combines a language model with a curated ingredient graph for relevant, practical results.</p>
+        <div class="project-card-status" aria-hidden="true">
+          <span>Model workflow</span><b>External live app</b>
+        </div>
+        <div class="project-telemetry telemetry-network" aria-hidden="true">
+          <div class="telemetry-topline"><span>Ingredient Graph</span><span>LLM</span></div>
+          <div class="network-node n1"></div><div class="network-node n2"></div><div class="network-node n3"></div><div class="network-node n4"></div>
+          <div class="network-line l1"></div><div class="network-line l2"></div><div class="network-line l3"></div>
+        </div>
         <div class="project-card-chips">
           <span class="chip chip-plum">LLM</span>
           <span class="chip chip-plum">AI</span>
@@ -165,7 +207,7 @@ export const markup = `
       </a>
 
       <!-- AI Newsletter -->
-      <a href="https://aiaware.beehiiv.com" class="project-card reveal reveal-delay-3" target="_blank" rel="noopener noreferrer" aria-label="AI Aware Newsletter">
+      <a href="https://aiaware.beehiiv.com" class="project-card reveal reveal-delay-3" data-project-index="2" target="_blank" rel="noopener noreferrer" aria-label="AI Aware Newsletter">
         <div class="project-card-header">
           <div class="project-card-icon" style="background:rgba(77,170,116,0.1);border-color:rgba(77,170,116,0.2);color:var(--color-success)" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -179,6 +221,15 @@ export const markup = `
         <p class="project-card-eyebrow" style="color:var(--color-success)">Automation</p>
         <h3 class="project-card-title">AI Aware Newsletter</h3>
         <p class="project-card-desc">Fully automated newsletter pipeline — scrapes, summarises, and formats daily AI research digests using LLMs, then distributes on schedule with zero manual intervention.</p>
+        <div class="project-card-status" aria-hidden="true">
+          <span>Distribution loop</span><b>Scheduled system</b>
+        </div>
+        <div class="project-telemetry telemetry-feed" aria-hidden="true">
+          <div class="telemetry-topline"><span>Daily Pipeline</span><span>06:00</span></div>
+          <div class="feed-row"><span></span><i style="--w:74%"></i></div>
+          <div class="feed-row"><span></span><i style="--w:52%"></i></div>
+          <div class="feed-row"><span></span><i style="--w:86%"></i></div>
+        </div>
         <div class="project-card-chips">
           <span class="chip chip-success">Automation</span>
           <span class="chip chip-plum">LLM</span>
@@ -187,6 +238,7 @@ export const markup = `
         </div>
       </a>
 
+    </div>
     </div>
     <div class="aurora-bleed" id="aurora-bleed"></div>
   </div>
@@ -208,15 +260,23 @@ export const markup = `
       <circle cx="70" cy="70" r="8" stroke="#FF2244" stroke-width="0.6" opacity="0.4"/>
     </svg>
   </div>
-  <div class="tz-label">Live Earth Intelligence</div>
+  <div class="tz-label">Telemetry Corridor</div>
 </section>
 
 <!-- DASHBOARDS -->
-<section class="section" id="dashboards" aria-labelledby="dashboards-heading">
+<section class="section dashboards-section" id="dashboards" aria-labelledby="dashboards-heading">
   <div class="container">
     <p class="section-eyebrow reveal">Live Work</p>
     <h2 class="section-heading reveal reveal-delay-1" id="dashboards-heading">BI Dashboards</h2>
     <p class="section-sub reveal reveal-delay-2">Live dashboards pulling real-time data from public APIs. Earthquakes, wildfires, and ISS tracking — built with Three.js WebGL, zero paid services.</p>
+    <div class="dashboards-orbit reveal reveal-delay-3" aria-hidden="true">
+      <span>Terrain signal</span><span>Global telemetry</span><span>Live dashboard</span>
+    </div>
+    <div class="globe-reveal-strip reveal reveal-delay-4" aria-hidden="true">
+      <span><b>01</b> Resolve surface</span>
+      <span><b>02</b> Attach live feeds</span>
+      <span><b>03</b> Open control layer</span>
+    </div>
     <div class="dashboards-grid">
 
       <!-- Globe Dashboard -->
@@ -235,6 +295,19 @@ export const markup = `
         </div>
         <div class="globe-wrap">
           <div class="globe-left">
+            <div class="globe-reveal-overlay" aria-hidden="true">
+              <div class="globe-reveal-lock">
+                <span class="globe-lock-ring"></span>
+                <span class="globe-lock-core"></span>
+              </div>
+              <div class="globe-reveal-copy">
+                <span>Global feed resolving</span>
+                <b>Earth intelligence layer</b>
+              </div>
+              <div class="globe-reveal-nodes">
+                <i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </div>
             <canvas id="globe-canvas-inner"></canvas>
             <div class="globe-overlay-pills">
               <div class="g-pill" id="gp-eq"><span class="gd" style="background:#E040FB"></span><span id="gc-eq-count">--</span> earthquakes 24h</div>
@@ -296,7 +369,7 @@ export const markup = `
 </section>
 
 <!-- ABOUT -->
-<section class="section" id="about" aria-labelledby="about-heading">
+<section class="section about-cooldown" id="about" aria-labelledby="about-heading">
   <div class="container-default">
     <p class="section-eyebrow reveal">Background</p>
     <h2 class="section-heading reveal reveal-delay-1" id="about-heading">About Me</h2>
@@ -351,10 +424,10 @@ export const markup = `
       <div class="footer-name">Karthik Punati</div>
       <div class="footer-tagline">Data Analyst &amp; AI Builder &mdash; Bay Area</div>
       <ul class="footer-links">
-        <li><a href="mailto:hello@karthikpunati.com">
+        <li><button type="button" data-contact-open>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          hello@karthikpunati.com
-        </a></li>
+          Contact
+        </button></li>
         <li><a href="https://github.com/kpunati" target="_blank" rel="noopener">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
           GitHub
@@ -366,9 +439,39 @@ export const markup = `
       </ul>
     </div>
     <div style="text-align:right">
-      <a href="mailto:hello@karthikpunati.com" class="btn btn-primary">Get in Touch</a>
+      <button type="button" class="btn btn-primary" data-contact-open>Get in Touch</button>
     </div>
   </div>
   <div class="footer-copy">&copy; 2025 Karthik Punati. Built with precision.</div>
 </footer>
+
+<div class="contact-modal" id="contact-modal" aria-hidden="true">
+  <div class="contact-backdrop" data-contact-close></div>
+  <section class="contact-card" role="dialog" aria-modal="true" aria-labelledby="contact-title">
+    <button type="button" class="contact-close" data-contact-close aria-label="Close contact form">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <p class="contact-kicker">Contact Terminal</p>
+    <h2 id="contact-title">Start a project conversation</h2>
+    <form class="contact-form" id="contact-form">
+      <label>
+        <span>Name</span>
+        <input name="name" autocomplete="name" required placeholder="Your name">
+      </label>
+      <label>
+        <span>Email</span>
+        <input name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+      </label>
+      <label>
+        <span>What are you building?</span>
+        <textarea name="message" rows="5" required placeholder="A few lines about the project, dashboard, or role."></textarea>
+      </label>
+      <div class="contact-actions">
+        <button type="button" class="btn btn-ghost" data-contact-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Prepare Signal</button>
+      </div>
+      <p class="contact-status" id="contact-status" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+</div>
 `;

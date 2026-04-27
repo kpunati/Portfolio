@@ -1,39 +1,82 @@
-// src/main.js — Portfolio orchestrator
-// Injects markup first, then chains all inits in order after a rAF
-// to guarantee the injected DOM is fully parsed before any module touches it.
+// src/main.js - Portfolio orchestrator
 
 import { markup } from './markup.js';
-import { initGlobe }     from './scene/globe.js';
-import { initParticles } from './sections/particles.js';
-import { initMomentum }  from './sections/momentum.js';
-import { initLayers }    from './sections/layers.js';
+
+function whenIdle(callback) {
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(callback, { timeout: 1200 });
+    return;
+  }
+  window.setTimeout(callback, 180);
+}
+
+function loadGlobeWhenNeeded() {
+  const dashboards = document.getElementById('dashboards');
+  let loaded = false;
+
+  const load = async () => {
+    if (loaded) return;
+    loaded = true;
+    const { initGlobe } = await import('./scene/globe.js');
+    initGlobe();
+  };
+
+  if (!dashboards || !('IntersectionObserver' in window)) {
+    whenIdle(load);
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) {
+      observer.disconnect();
+      load();
+    }
+  }, { rootMargin: '900px 0px', threshold: 0.01 });
+
+  observer.observe(dashboards);
+}
+
+async function bootVisuals() {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const [
+    { initParticles },
+    { initMomentum },
+    { initLayers },
+  ] = await Promise.all([
+    import('./sections/particles.js'),
+    import('./sections/momentum.js'),
+    import('./sections/layers.js'),
+  ]);
+
+  initParticles({ prefersReducedMotion });
+  initMomentum();
+  initLayers();
+
+  if (!prefersReducedMotion) {
+    whenIdle(async () => {
+      const { initDataTerrain } = await import('./scene/dataTerrain.js');
+      initDataTerrain();
+    });
+  }
+
+  loadGlobeWhenNeeded();
+}
 
 function boot() {
-  // 1. Inject all HTML into #app
   const app = document.getElementById('app');
   if (!app) { console.error('main.js: #app not found'); return; }
   app.innerHTML = markup;
 
-  // 2. Wait two rAF ticks so the browser lays out the injected DOM
-  //    before any module tries to query canvas / section elements.
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      // 3. Globe first — heaviest, starts its own rAF loop internally
-      initGlobe();
-
-      // 4. Particles + helix (needs hero-canvas + helix-canvas in DOM)
-      initParticles();
-
-      // 5. Scroll momentum, rail, aurora, TZ canvas
-      initMomentum();
-
-      // 6. Cinematic layer hooks (hero pressure, parallax, cooldown)
-      initLayers();
+      bootVisuals().catch((error) => {
+        console.error('main.js: visual boot failed', error);
+      });
     });
   });
 }
 
-// Run after DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
 } else {

@@ -1,4 +1,7 @@
-node_modules
-dist
+antigravity-bundle-web-designer/
+node_modules/
+dist/
 .DS_Store
 *.local
+*.mov
+*.mp4
