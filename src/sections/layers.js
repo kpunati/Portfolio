@@ -56,17 +56,19 @@ export function initLayers() {
 
     const globeRect = globeWrap ? globeWrap.getBoundingClientRect() : null;
     const globeProgress = globeRect ? clamp((window.innerHeight * 0.98 - globeRect.top) / (window.innerHeight * 0.86)) : 0;
+    const scanProgress = globeRect ? clamp((window.innerHeight * 1.24 - globeRect.top) / (window.innerHeight * 0.78)) * (1 - globeProgress * 0.62) : 0;
     const aboutProgress = sectionProgress(about, 0.9, 0.22);
 
     hooks.densityBoost = pressure * 1.2 + projectsProgress * 0.28;
-    hooks.helixBoost = pressure * 1.05 + projectsProgress * 0.18;
-    hooks.projectsDrift = projectsProgress;
+    hooks.helixBoost = pressure * 0.8 + projectsProgress * 0.1;
+    hooks.projectsDrift = projectsProgress + scanProgress * 0.35;
     hooks.aboutCalm = aboutProgress;
     globeHooks.emerge = globeProgress;
 
     root.style.setProperty('--hero-pressure', pressure.toFixed(3));
     root.style.setProperty('--projects-depth', projectsProgress.toFixed(3));
     root.style.setProperty('--aurora-progress', auroraProgress.toFixed(3));
+    root.style.setProperty('--scan-progress', scanProgress.toFixed(3));
     root.style.setProperty('--globe-emerge', globeProgress.toFixed(3));
     root.style.setProperty('--about-calm', aboutProgress.toFixed(3));
 

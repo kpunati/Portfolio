@@ -38,6 +38,7 @@ export function initDataTerrain() {
     targetFocusProject: -1,
     hero: 0,
     projects: 0,
+    scan: 0,
     globe: 0,
     about: 0,
     activeProject: 0
@@ -96,6 +97,7 @@ export function initDataTerrain() {
     uPointSize: { value: isMobile ? 1.75 : 2.25 },
     uIntensity: { value: 1 },
     uProjects: { value: 0 },
+    uScan: { value: 0 },
     uGlobe: { value: 0 },
     uAbout: { value: 0 }
   };
@@ -143,6 +145,7 @@ export function initDataTerrain() {
       uniform float uPointSize;
       uniform float uIntensity;
       uniform float uProjects;
+      uniform float uScan;
       uniform float uGlobe;
       uniform float uAbout;
       varying vec3 vColor;
@@ -153,9 +156,10 @@ export function initDataTerrain() {
         float waveA = sin(p.x * 0.72 + uTime * 0.62);
         float waveB = cos(p.z * 0.56 - uTime * 0.46);
         float waveC = sin((p.x + p.z) * 0.34 + uTime * 0.28);
-        float projectLift = uProjects * sin(p.x * 0.42) * 0.55;
-        p.y += waveA * 0.34 + waveB * 0.26 + waveC * 0.18 + projectLift;
-        p.z += uGlobe * 1.8;
+        float projectLift = uProjects * sin(p.x * 0.42) * 0.72;
+        float scanCompression = uScan * sin(p.z * 0.36) * 0.28;
+        p.y += waveA * 0.34 + waveB * 0.26 + waveC * 0.18 + projectLift + scanCompression;
+        p.z += uScan * 1.2 + uGlobe * 1.8;
         p.y *= 1.0 - uAbout * 0.55;
 
         vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
@@ -355,6 +359,78 @@ export function initDataTerrain() {
   signalGroup.position.set(2.8, 0.15, -5.4);
   scene.add(signalGroup);
 
+  const heroConstellationGroup = new THREE.Group();
+  const heroNodeGeometry = new THREE.SphereGeometry(0.072, 12, 12);
+  const heroNodeMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffd56a,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const heroCyanMaterial = new THREE.MeshBasicMaterial({
+    color: 0x5eead4,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const heroLineMaterial = new THREE.LineBasicMaterial({
+    color: 0xffd56a,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const heroCyanLineMaterial = new THREE.LineBasicMaterial({
+    color: 0x5eead4,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const heroSignalNodes = [];
+  const heroSignalData = [
+    [-3.25, 1.55, -4.2, 0],
+    [-2.15, 2.25, -4.9, 1],
+    [-0.72, 1.84, -5.6, 0],
+    [-3.72, 0.18, -5.1, 1],
+    [-1.72, 0.24, -6.2, 0],
+    [0.05, 0.76, -6.9, 1],
+    [-4.25, -1.05, -6.7, 0],
+    [-2.35, -1.38, -7.6, 1],
+    [-0.55, -0.78, -8.3, 0]
+  ];
+  heroSignalData.slice(0, isMobile ? 6 : heroSignalData.length).forEach((data, index) => {
+    const node = new THREE.Mesh(heroNodeGeometry, data[3] ? heroCyanMaterial : heroNodeMaterial);
+    node.position.set(data[0], data[1], data[2]);
+    node.userData.base = { x: data[0], y: data[1], z: data[2], phase: index * 0.7 };
+    heroSignalNodes.push(node);
+    heroConstellationGroup.add(node);
+  });
+  const heroLinePoints = [];
+  for (let i = 0; i < heroSignalNodes.length - 1; i++) {
+    const a = heroSignalData[i];
+    const b = heroSignalData[i + 1];
+    heroLinePoints.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+    if (i + 2 < heroSignalNodes.length && i % 2 === 0) {
+      const c = heroSignalData[i + 2];
+      heroLinePoints.push(a[0], a[1], a[2], c[0], c[1], c[2]);
+    }
+  }
+  heroConstellationGroup.add(new THREE.LineSegments(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(heroLinePoints, 3)),
+    heroLineMaterial
+  ));
+  const heroBracket = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(5.4, 3.1, 0.08)),
+    heroCyanLineMaterial
+  );
+  heroBracket.position.set(-2.18, 0.44, -5.9);
+  heroBracket.rotation.set(0.04, -0.16, 0.0);
+  heroConstellationGroup.add(heroBracket);
+  scene.add(heroConstellationGroup);
+
   const panelGroup = new THREE.Group();
   const panelMaterials = [
     new THREE.LineBasicMaterial({ color: 0xd4a652, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false }),
@@ -487,6 +563,20 @@ export function initDataTerrain() {
   });
   scene.add(artifactGroup);
 
+  const artifactHaloMaterials = [
+    new THREE.MeshBasicMaterial({ color: 0xd4a652, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+    new THREE.MeshBasicMaterial({ color: 0x7a5a8f, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+    new THREE.MeshBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })
+  ];
+  const artifactHalos = artifactData.map((data, index) => {
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 2.25), artifactHaloMaterials[index]);
+    halo.position.set(data.x, data.y, data.z + 0.18);
+    halo.rotation.y = data.ry;
+    halo.userData.base = { ...data };
+    artifactGroup.add(halo);
+    return halo;
+  });
+
   const scanMaterial = new THREE.LineBasicMaterial({
     color: 0x5eead4,
     transparent: true,
@@ -506,6 +596,58 @@ export function initDataTerrain() {
     scanGroup.add(frame);
   }
   scene.add(scanGroup);
+
+  const scanPassageGroup = new THREE.Group();
+  const scanFrameMaterial = new THREE.LineBasicMaterial({
+    color: 0x5eead4,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const scanGoldMaterial = new THREE.LineBasicMaterial({
+    color: 0xffd56a,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const scanBeamMaterial = new THREE.LineBasicMaterial({
+    color: 0xb8a0cc,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  for (let i = 0; i < (isMobile ? 5 : 9); i++) {
+    const frame = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(5.6 + i * 0.55, 2.45 + i * 0.16, 0.045)),
+      i % 2 ? scanGoldMaterial : scanFrameMaterial
+    );
+    frame.position.set(0.12, 0.28, -7.2 - i * 1.05);
+    frame.rotation.set(0.08, Math.sin(i) * 0.06, 0);
+    frame.userData.phase = i * 0.5;
+    frame.userData.baseZ = frame.position.z;
+    scanPassageGroup.add(frame);
+  }
+  const scanBeamPoints = [];
+  const beamStarts = [
+    [-5.8, 1.5, -6.4], [5.8, 1.15, -6.7],
+    [-5.2, -1.35, -7.1], [5.2, -1.25, -7.4],
+    [0, 2.0, -6.2], [0, -1.9, -6.5]
+  ];
+  beamStarts.forEach((start, index) => {
+    const endX = index % 2 ? -0.5 : 0.5;
+    scanBeamPoints.push(start[0], start[1], start[2], endX, start[1] * 0.22, -17.5);
+  });
+  const scanBeams = new THREE.LineSegments(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(scanBeamPoints, 3)),
+    scanBeamMaterial
+  );
+  scanBeams.userData.baseZ = 0;
+  scanBeams.userData.phase = 0;
+  scanPassageGroup.add(scanBeams);
+  scene.add(scanPassageGroup);
 
   const projectBeacons = [];
   const beaconGeometry = new THREE.SphereGeometry(0.11, 14, 14);
@@ -601,6 +743,8 @@ export function initDataTerrain() {
     state.focusProject = lerp(state.focusProject, state.targetFocusProject, 0.12);
     state.hero = lerp(state.hero, 1 - sectionProgress('projects', 0.98, 0.76), 0.05);
     state.projects = lerp(state.projects, sectionProgress('projects', 0.9, 0.1), 0.05);
+    const scanTarget = sectionProgress('dashboards', 1.18, 0.54) * (1 - sectionProgress('dashboards', 0.72, 0.18) * 0.78);
+    state.scan = lerp(state.scan, scanTarget, 0.065);
     state.globe = lerp(state.globe, sectionProgress('dashboards', 0.9, 0.18), 0.06);
     state.about = lerp(state.about, sectionProgress('about', 0.9, 0.18), 0.06);
     const fallbackProject = clamp(Math.floor((state.projectProgress || state.projects) * 3.05), 0, 2);
@@ -612,6 +756,7 @@ export function initDataTerrain() {
     terrainUniforms.uTime.value = time;
     terrainUniforms.uIntensity.value = intensity;
     terrainUniforms.uProjects.value = state.projects;
+    terrainUniforms.uScan.value = state.scan;
     terrainUniforms.uGlobe.value = state.globe;
     terrainUniforms.uAbout.value = state.about;
 
@@ -619,14 +764,33 @@ export function initDataTerrain() {
     stars.position.z = state.scroll * 4.0;
     starMaterial.opacity = 0.18 + state.hero * 0.32 + state.projects * 0.1 + state.globe * 0.06 - state.about * 0.14;
 
-    chamberMaterial.opacity = 0.08 + state.hero * 0.32 + state.projects * 0.06 - state.globe * 0.12 - state.about * 0.12;
-    chamberAccentMaterial.opacity = 0.05 + state.hero * 0.20 + state.projects * 0.10 - state.globe * 0.10 - state.about * 0.1;
+    chamberMaterial.opacity = 0.08 + state.hero * 0.38 + state.projects * 0.08 - state.scan * 0.10 - state.globe * 0.12 - state.about * 0.12;
+    chamberAccentMaterial.opacity = 0.05 + state.hero * 0.25 + state.projects * 0.14 + state.scan * 0.04 - state.globe * 0.10 - state.about * 0.1;
     chamberGroup.position.x = lerp(chamberGroup.position.x, state.mouseX * -0.25, 0.04);
     chamberGroup.position.y = lerp(chamberGroup.position.y, state.mouseY * -0.12 + state.projects * -0.42, 0.04);
     chamberGroup.position.z = lerp(chamberGroup.position.z, state.scroll * 5.8 - state.projects * 2.0, 0.04);
     chamberGroup.children.forEach((ring, index) => {
       ring.rotation.z = time * (0.018 + index * 0.002) + ring.userData.phase;
       ring.scale.setScalar(1 + Math.sin(time * 0.42 + index) * 0.018 + state.hero * 0.035);
+    });
+
+    heroNodeMaterial.opacity = Math.max(0, 0.12 + state.hero * 0.78 - state.projects * 0.18 - state.globe * 0.24 - state.about * 0.12);
+    heroCyanMaterial.opacity = Math.max(0, 0.10 + state.hero * 0.70 + state.projects * 0.08 - state.globe * 0.22 - state.about * 0.12);
+    heroLineMaterial.opacity = Math.max(0, 0.04 + state.hero * 0.34 + state.scan * 0.1 - state.about * 0.08);
+    heroCyanLineMaterial.opacity = Math.max(0, 0.05 + state.hero * 0.30 + state.projects * 0.08 - state.globe * 0.14 - state.about * 0.08);
+    heroConstellationGroup.position.x = lerp(heroConstellationGroup.position.x, state.mouseX * -0.22 + state.projects * -0.55, 0.04);
+    heroConstellationGroup.position.y = lerp(heroConstellationGroup.position.y, state.mouseY * -0.12 + state.hero * 0.16 - state.projects * 0.2, 0.04);
+    heroConstellationGroup.position.z = lerp(heroConstellationGroup.position.z, state.scroll * 3.8 + state.scan * -1.2, 0.04);
+    heroConstellationGroup.rotation.y = lerp(heroConstellationGroup.rotation.y, state.mouseX * 0.045 + state.projects * -0.08, 0.04);
+    heroSignalNodes.forEach((node, index) => {
+      const base = node.userData.base;
+      const pulse = 1 + Math.sin(time * 1.8 + base.phase) * 0.32 + state.hero * 0.18;
+      node.position.set(
+        base.x + Math.sin(time * 0.42 + index) * 0.04,
+        base.y + Math.cos(time * 0.36 + index) * 0.06,
+        base.z + Math.sin(time * 0.24 + index) * 0.05
+      );
+      node.scale.setScalar(pulse);
     });
 
     signalGroup.position.x = lerp(signalGroup.position.x, 2.8 + state.mouseX * -0.42 - state.projects * 1.4, 0.04);
@@ -655,13 +819,13 @@ export function initDataTerrain() {
     });
     signalAttr.needsUpdate = true;
 
-    terrain.rotation.y = lerp(terrain.rotation.y, state.mouseX * 0.018 + state.globe * 0.025, 0.04);
+    terrain.rotation.y = lerp(terrain.rotation.y, state.mouseX * 0.018 + state.scan * 0.045 + state.globe * 0.025, 0.04);
     terrain.position.x = lerp(terrain.position.x, state.mouseX * -0.35, 0.04);
-    terrain.position.z = lerp(terrain.position.z, state.scroll * 6 - state.globe * 2.8, 0.04);
+    terrain.position.z = lerp(terrain.position.z, state.scroll * 6 + state.scan * -1.6 - state.globe * 2.8, 0.04);
     contourGroup.position.x = terrain.position.x;
     contourGroup.position.z = terrain.position.z;
     contourGroup.rotation.y = terrain.rotation.y;
-    contourMaterial.opacity = 0.18 + state.hero * 0.18 + state.projects * 0.26 + state.globe * 0.06 - state.about * 0.18;
+    contourMaterial.opacity = 0.18 + state.hero * 0.18 + state.projects * 0.30 + state.scan * 0.14 + state.globe * 0.06 - state.about * 0.18;
     if (contourFrame % 2 === 0) {
       contours.forEach((line, lineIndex) => {
         const attr = line.geometry.getAttribute('position');
@@ -681,36 +845,45 @@ export function initDataTerrain() {
 
     panelGroup.position.y = lerp(panelGroup.position.y, state.projects * 0.75 - state.about * 0.4, 0.04);
     panelMaterials.forEach((mat, index) => {
-      mat.opacity = (index === 0 ? 0.22 : 0.14) + state.projects * 0.2 + state.globe * 0.06 - state.about * 0.16;
+      mat.opacity = (index === 0 ? 0.22 : 0.14) + state.projects * 0.22 + state.scan * 0.12 + state.globe * 0.06 - state.about * 0.16;
     });
     panels.forEach((panel) => {
       const base = panel.userData.base;
       panel.position.y = base.y + Math.sin(time * 0.7 + base.phase) * 0.16 + state.projects * 0.35;
-      panel.position.z = base.z + Math.sin(time * 0.42 + base.phase) * 0.18 + state.globe * 2.0;
+      panel.position.z = base.z + Math.sin(time * 0.42 + base.phase) * 0.18 - state.scan * 1.4 + state.globe * 2.0;
       panel.rotation.x = base.rx + Math.sin(time * 0.36 + base.phase) * 0.025;
       panel.rotation.y = base.ry + state.mouseX * 0.025;
     });
 
-    const artifactOpacity = Math.max(0, state.projects * 1.08 - state.globe * 0.52 - state.about * 0.3);
+    const artifactOpacity = Math.max(0, state.projects * 1.18 + state.scan * 0.22 - state.globe * 0.52 - state.about * 0.3);
     artifactMaterials.forEach((material, index) => {
       const dotBoost = index > 2 ? 0.18 : 0;
       material.opacity = artifactOpacity * (0.34 + dotBoost);
     });
-    artifactGroup.position.y = lerp(artifactGroup.position.y, state.projects * 0.9 - state.globe * 0.36, 0.045);
-    artifactGroup.position.z = lerp(artifactGroup.position.z, -state.projects * 1.1 + state.globe * -1.2, 0.045);
+    artifactGroup.position.y = lerp(artifactGroup.position.y, state.projects * 1.05 - state.scan * 0.25 - state.globe * 0.36, 0.045);
+    artifactGroup.position.z = lerp(artifactGroup.position.z, -state.projects * 1.35 - state.scan * 1.2 + state.globe * -1.2, 0.045);
     artifacts.forEach((artifact, index) => {
       const base = artifact.userData.base;
       const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
-      const laneOffset = (index - state.activeProject) * 4.9;
+      const laneOffset = (index - state.activeProject) * (isMobile ? 3.9 : 5.6);
       artifact.position.x = lerp(artifact.position.x, laneOffset + state.mouseX * (0.22 + index * 0.06), 0.055);
-      artifact.position.y = base.y + Math.sin(time * 0.62 + index) * 0.12 + active * 0.58;
-      artifact.position.z = base.z + Math.sin(time * 0.38 + index) * 0.16 - active * 1.75 + Math.abs(index - state.activeProject) * -0.92;
+      artifact.position.y = base.y + Math.sin(time * 0.62 + index) * 0.12 + active * 0.86 + state.scan * 0.18;
+      artifact.position.z = base.z + Math.sin(time * 0.38 + index) * 0.16 - active * 2.7 + Math.abs(index - state.activeProject) * -1.08 - state.scan * 1.0;
       artifact.rotation.x = Math.sin(time * 0.28 + index) * 0.035 + state.mouseY * -0.025;
-      artifact.rotation.y = base.ry + state.mouseX * 0.065 + active * 0.14 - (index - state.activeProject) * 0.12;
-      artifact.scale.setScalar(0.68 + state.projects * 0.22 + active * 0.44);
+      artifact.rotation.y = base.ry + state.mouseX * 0.065 + active * 0.22 - (index - state.activeProject) * 0.16;
+      artifact.scale.setScalar(0.68 + state.projects * 0.28 + active * 0.72 + state.scan * 0.12);
+    });
+    artifactHalos.forEach((halo, index) => {
+      const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
+      const artifact = artifacts[index];
+      halo.position.copy(artifact.position);
+      halo.position.z += 0.12;
+      halo.rotation.copy(artifact.rotation);
+      halo.scale.setScalar(0.9 + active * 0.58 + state.scan * 0.16);
+      halo.material.opacity = artifactOpacity * (0.035 + active * 0.14);
     });
 
-    scanMaterial.opacity = Math.max(0, state.projects * 0.5 - state.globe * 0.34 - state.about * 0.2);
+    scanMaterial.opacity = Math.max(0, state.projects * 0.5 + state.scan * 0.16 - state.globe * 0.34 - state.about * 0.2);
     scanGroup.position.set(
       lerp(scanGroup.position.x, (activeProjectIndex - 1) * 2.2 + state.mouseX * 0.2, 0.055),
       lerp(scanGroup.position.y, 0.92 + state.projects * 0.62, 0.055),
@@ -724,6 +897,17 @@ export function initDataTerrain() {
       plane.rotation.y = state.mouseX * 0.04 + offset * 0.03;
       plane.scale.setScalar(0.88 + state.projects * 0.2 + Math.sin(time * 1.4 + index) * 0.025);
     });
+    const scanOpacity = Math.max(0, state.scan * 0.82 - state.about * 0.25);
+    scanFrameMaterial.opacity = scanOpacity * 0.42;
+    scanGoldMaterial.opacity = scanOpacity * 0.32;
+    scanBeamMaterial.opacity = scanOpacity * 0.25;
+    scanPassageGroup.position.z = lerp(scanPassageGroup.position.z, state.scan * 3.4 + state.globe * 2.1, 0.055);
+    scanPassageGroup.position.y = lerp(scanPassageGroup.position.y, state.scan * 0.28 - state.globe * 0.2, 0.055);
+    scanPassageGroup.rotation.y = lerp(scanPassageGroup.rotation.y, state.mouseX * 0.05, 0.04);
+    scanPassageGroup.children.forEach((item, index) => {
+      item.position.z = item.userData.baseZ + Math.sin(time * 0.8 + index * 0.5) * 0.08;
+      item.scale.setScalar(1 + state.scan * 0.08 + Math.sin(time * 1.4 + index) * 0.012);
+    });
     projectBeacons.forEach((beacon, index) => {
       const distance = Math.abs(state.focusProject - index);
       const active = state.targetFocusProject === index ? 1 : Math.max(0, 1 - distance);
@@ -735,7 +919,7 @@ export function initDataTerrain() {
     });
 
     routeGroup.position.z = terrain.position.z * 0.45;
-    routeMaterial.opacity = 0.16 + state.projects * 0.22 + state.globe * 0.12 - state.about * 0.2;
+    routeMaterial.opacity = 0.16 + state.projects * 0.25 + state.scan * 0.24 + state.globe * 0.12 - state.about * 0.2;
     packets.forEach((packet, index) => {
       const t = (time * (0.055 + index * 0.002) + packet.userData.phase) % 1;
       const lane = index % 3;
@@ -744,50 +928,57 @@ export function initDataTerrain() {
       packet.position.z = (3 - lane * 5) - t * 16 + routeGroup.position.z;
       const scale = 0.7 + Math.sin(t * Math.PI) * 1.6;
       packet.scale.setScalar(scale);
-      packet.material.opacity = (0.22 + state.projects * 0.42 + state.globe * 0.18) * (1 - state.about * 0.6);
+      packet.material.opacity = (0.22 + state.projects * 0.42 + state.scan * 0.28 + state.globe * 0.18) * (1 - state.about * 0.6);
     });
 
-    glowMaterial.opacity = 0.035 + state.projects * 0.035 + state.globe * 0.03 - state.about * 0.03;
+    glowMaterial.opacity = 0.035 + state.projects * 0.04 + state.scan * 0.045 + state.globe * 0.03 - state.about * 0.03;
 
     const projectX = (state.activeProject - 1) * 1.35;
     const heroWeight = Math.max(0, 1 - state.projects * 0.9);
-    const projectWeight = state.projects * (1 - state.globe * 0.62);
+    const projectWeight = state.projects * (1 - state.scan * 0.45) * (1 - state.globe * 0.62);
+    const scanWeight = state.scan * (1 - state.globe * 0.45);
     const globeWeight = state.globe * (1 - state.about * 0.55);
     const aboutWeight = state.about;
-    const weightTotal = Math.max(0.001, heroWeight + projectWeight + globeWeight + aboutWeight);
+    const weightTotal = Math.max(0.001, heroWeight + projectWeight + scanWeight + globeWeight + aboutWeight);
 
     const targetCamX = (
       heroWeight * 0.0 +
       projectWeight * projectX +
+      scanWeight * 0.12 +
       globeWeight * 0.74 +
       aboutWeight * 0.0
     ) / weightTotal + state.mouseX * (0.42 - state.about * 0.22);
     const targetCamY = (
       heroWeight * 6.3 +
       projectWeight * 4.25 +
+      scanWeight * 3.82 +
       globeWeight * 4.9 +
       aboutWeight * 5.9
     ) / weightTotal + state.mouseY * -0.22;
     const targetCamZ = (
       heroWeight * 15.4 +
       projectWeight * 8.7 +
+      scanWeight * 6.9 +
       globeWeight * 9.6 +
       aboutWeight * 14.2
     ) / weightTotal;
     const lookX = (
       heroWeight * 0.0 +
       projectWeight * projectX * 0.68 +
+      scanWeight * 0.1 +
       globeWeight * 0.62
     ) / weightTotal + state.mouseX * 0.45;
     const lookY = (
       heroWeight * -0.45 +
       projectWeight * -0.75 +
+      scanWeight * -0.08 +
       globeWeight * -0.35 +
       aboutWeight * -0.8
     ) / weightTotal;
     const lookZ = (
       heroWeight * -7.5 +
       projectWeight * -8.9 +
+      scanWeight * -14.8 +
       globeWeight * -10.0 +
       aboutWeight * -8.5
     ) / weightTotal;

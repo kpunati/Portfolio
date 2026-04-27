@@ -73,8 +73,13 @@ export function initMomentum() {
       else card.classList.remove('is-active');
     });
     projectSteps.forEach(function(step, stepIndex){
-      if(stepIndex === index) step.classList.add('is-active');
-      else step.classList.remove('is-active');
+      if(stepIndex === index) {
+        step.classList.add('is-active');
+        step.setAttribute('aria-current', 'step');
+      } else {
+        step.classList.remove('is-active');
+        step.removeAttribute('aria-current');
+      }
     });
     document.documentElement.style.setProperty('--active-project', String(Math.max(0, index)));
     window.dispatchEvent(new CustomEvent('portfolio:project-focus', {
@@ -93,7 +98,8 @@ export function initMomentum() {
   function updateProjectFocus() {
     if(!projectCards.length) return;
     updateProjectProgress();
-    var viewportCenter = window.innerHeight * 0.46;
+    var viewportCenter = window.innerHeight * 0.5;
+    var progressIndex = clamp(Math.floor(projectProgress * projectCards.length), 0, projectCards.length - 1);
     var bestIndex = -1;
     var bestDistance = Infinity;
     projectCards.forEach(function(card, index){
@@ -110,6 +116,7 @@ export function initMomentum() {
         bestIndex = index;
       }
     });
+    if(bestIndex < 0) bestIndex = progressIndex;
     setActiveProject(bestIndex);
   }
 
