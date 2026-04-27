@@ -5,11 +5,19 @@ export function initGlobe() {
 // ── GLOBE DASHBOARD ───────────────────────────────────────────────────────
 (function() {
   var GS = {eq:[],fire:[],iss:{lat:0,lon:0,alt:0,vel:0,vis:'daylight'},lastISS:0};
+  var FIRE_CACHE_KEY = 'gfire3';
   var GLOBE_R = 1.0;
   function mC(m){return m<2.5?'#C084FC':m<4?'#E040FB':m<6?'#F000FF':'#FF00CC';}
   function mB(m){return m<2.5?'rgba(192,132,252,.15)':m<4?'rgba(224,64,251,.15)':m<6?'rgba(240,0,255,.15)':'rgba(255,0,204,.15)';}
   function sT(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   function tAgo(ms){var s=Math.floor((Date.now()-ms)/1000);return s<60?s+'s ago':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';}
+  function fireRegion(f){
+    var lon = ((f.lon + 540) % 360) - 180;
+    if (lon >= -170 && lon < -30 && f.lat >= 0) return 'na';
+    if (lon >= -90 && lon < -30 && f.lat < 0) return 'sa';
+    if (lon >= -20 && lon <= 55 && f.lat >= -35 && f.lat <= 38) return 'af';
+    return 'asia';
+  }
 
   var canvas = document.getElementById('globe-canvas-inner');
   var wrap   = canvas.parentElement;
@@ -170,7 +178,7 @@ export function initGlobe() {
     sT('gc-updated',new Date().toLocaleTimeString());
   }
   function fetchFire(){
-    var cached=localStorage.getItem('gfire2');
+    var cached=localStorage.getItem(FIRE_CACHE_KEY);
     if(cached){var d=JSON.parse(cached);if(Date.now()-d.ts<86400000){GS.fire=d.data;renderFireUI();updateFire();return;}}
     // NASA FIRMS VIIRS global 24h hotspot CSV — no auth, truly global
   var firmsUrl = 'https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-20-viirs-c2/csv/J1_VIIRS_C2_Global_24h.csv';
@@ -190,7 +198,7 @@ export function initGlobe() {
       // Sort by brightness, keep top 600 (global spread)
       pts.sort(function(a,b){return b.bright-a.bright;});
       GS.fire=pts.slice(0,600);
-      localStorage.setItem('gfire2',JSON.stringify({ts:Date.now(),data:GS.fire}));
+      localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
       renderFireUI(); updateFire();
     }).catch(function(e){
       console.warn('FIRMS fail, falling back to EONET',e);
@@ -199,15 +207,20 @@ export function initGlobe() {
         .then(function(j){
           GS.fire=j.events.flatMap(function(e){return e.geometry.map(function(g){return{lat:g.coordinates[1],lon:g.coordinates[0]};});})
             .filter(function(f){return f.lat&&f.lon&&Math.abs(f.lat)<=90&&Math.abs(f.lon)<=180;});
-          localStorage.setItem('gfire2',JSON.stringify({ts:Date.now(),data:GS.fire}));
+          localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
           renderFireUI(); updateFire();
         }).catch(function(e2){console.warn('EONET also failed',e2);});
     });
   }
   function renderFireUI(){
     sT('gc-fire-count',GS.fire.length); sT('gb-fire',GS.fire.length); sT('gc-ftotal',GS.fire.length);
-    var na=GS.fire.filter(function(f){return f.lon>-170&&f.lon<-50;}).length;
-    sT('gc-fna',na); sT('gc-frow',GS.fire.length-na);
+    var counts={na:0,sa:0,af:0,asia:0};
+    GS.fire.forEach(function(f){ counts[fireRegion(f)]++; });
+    sT('gc-fna',counts.na);
+    sT('gc-fsa',counts.sa);
+    sT('gc-faf',counts.af);
+    sT('gc-fasia',counts.asia);
+    sT('gc-frow',GS.fire.length-(counts.na+counts.sa+counts.af+counts.asia));
     if(GS.fire.length&&GS.fire[0].bright){
       var avg=Math.round(GS.fire.reduce(function(s,f){return s+(f.bright||0);},0)/GS.fire.length);
       sT('gc-fbright',avg+'K');
