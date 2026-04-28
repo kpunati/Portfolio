@@ -302,5 +302,50 @@ export function initMomentum() {
   updateCache();
   requestAnimationFrame(loop);
 
+  /* ── Mobile Nav Drawer ────────────────────────────────────────── */
+  const drawer   = document.getElementById('mobile-nav-drawer');
+  const toggle   = document.querySelector('.nav-mobile-toggle');
+  const closeBtn = document.getElementById('mobile-nav-close');
+
+  function openDrawer() {
+    if (!drawer) return;
+    drawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    // GSAP stagger entrance for nav links
+    if (typeof gsap !== 'undefined') {
+      gsap.fromTo('.mobile-nav-link, .mobile-nav-cta',
+        { x: 28, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.38, ease: 'power3.out', stagger: 0.06, delay: 0.18, clearProps: 'transform,opacity' }
+      );
+    }
+  }
+
+  function closeDrawer() {
+    if (!drawer) return;
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  if (toggle)   toggle.addEventListener('click', openDrawer);
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+
+  // Close on backdrop click or any link/button inside with data-mobile-nav-close
+  document.querySelectorAll('[data-mobile-nav-close]').forEach(function(el) {
+    el.addEventListener('click', closeDrawer);
+  });
+  const backdrop = document.getElementById('mobile-nav-backdrop');
+  if (backdrop) backdrop.addEventListener('click', closeDrawer);
+
+  // Escape key closes drawer
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && drawer && drawer.getAttribute('aria-hidden') === 'false') closeDrawer();
+  });
+
+  /* ── Footer year ─────────────────────────────────────────────── */
+  var yearEl = document.getElementById('footer-year');
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
 })();
 }

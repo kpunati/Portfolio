@@ -88,6 +88,25 @@ export const markup = `
   </button>
 </nav>
 
+<!-- MOBILE NAV DRAWER -->
+<div id="mobile-nav-drawer" aria-label="Mobile navigation" aria-hidden="true">
+  <div id="mobile-nav-backdrop"></div>
+  <nav id="mobile-nav-panel">
+    <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+        <path d="M18 6 6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <ul class="mobile-nav-links" role="list">
+      <li><a href="#hero"    class="mobile-nav-link" data-mobile-nav-close>Home</a></li>
+      <li><a href="#projects" class="mobile-nav-link" data-mobile-nav-close>Projects</a></li>
+      <li><a href="#dashboards" class="mobile-nav-link" data-mobile-nav-close>Dashboards</a></li>
+      <li><a href="#about"   class="mobile-nav-link" data-mobile-nav-close>About</a></li>
+    </ul>
+    <button type="button" class="btn btn-primary mobile-nav-cta" data-contact-open data-mobile-nav-close>Get in Touch</button>
+  </nav>
+</div>
+
 <!-- HERO -->
 <section class="hero" id="hero" aria-label="Hero">
   <div class="hero-grain" aria-hidden="true"></div>
@@ -103,7 +122,10 @@ export const markup = `
   </div>
   <div class="hero-content" id="main-content">
     <div class="hero-left">
-      <div class="hero-eyebrow" aria-label="Role: Data Analyst &amp; AI Builder"></div>
+      <div class="hero-eyebrow"
+        data-line1="Data Analyst &amp; AI Builder"
+        data-line2="Data-Driven Decision Architect"
+        aria-label="Data Analyst &amp; AI Builder · Data-Driven Decision Architect"></div>
       <h1 class="hero-name">Karthik<br><span>Punati</span></h1>
       <p class="hero-tagline">Turning raw signals into real products — from financial sentiment models to AI-powered tools people actually use.</p>
       <div class="hero-cta-row">
@@ -151,16 +173,33 @@ export const markup = `
     <p class="section-eyebrow reveal">What I&apos;ve Built</p>
     <h2 class="section-heading reveal reveal-delay-1" id="projects-heading">Projects</h2>
     <p class="section-sub reveal reveal-delay-2">Each project bridges data and product — built end-to-end, from raw pipeline to polished interface.</p>
-    <div class="project-scroll-stage">
-      <div class="project-stage-copy reveal reveal-delay-3" aria-hidden="true">
-        <div class="project-stage-kicker">Project Systems</div>
-        <div class="project-stage-title">Three working builds, each tied to a live data or automation problem.</div>
-        <div class="project-stage-steps">
-          <span><b>01</b> Signal ingestion</span>
-          <span><b>02</b> Model reasoning</span>
-          <span><b>03</b> Automated distribution</span>
+      <div class="project-scroll-stage">
+        <!-- Sidebar: sticky copy with per-project panels scrubbed by GSAP -->
+        <div class="project-stage-copy reveal reveal-delay-3" aria-hidden="true">
+          <div class="project-stage-kicker">Project Systems</div>
+
+          <!-- Per-project panels — GSAP scrubs between these -->
+          <div class="project-panels-wrap">
+            <div class="project-panel" data-index="0">
+              <div class="project-stage-title">Stock Sentiment Analysis</div>
+              <div class="project-stage-panel-desc">Real-time NLP pipeline turning financial news &amp; social signals into actionable equity sentiment scores.</div>
+            </div>
+            <div class="project-panel" data-index="1">
+              <div class="project-stage-title">Neural Kitchen</div>
+              <div class="project-stage-panel-desc">AI recipe generation from whatever ingredients you have — LLM reasoning meets a curated ingredient graph.</div>
+            </div>
+            <div class="project-panel" data-index="2">
+              <div class="project-stage-title">AI Aware Newsletter</div>
+              <div class="project-stage-panel-desc">Fully automated daily AI digest — scrape, summarise, format, and distribute with zero manual intervention.</div>
+            </div>
+          </div>
+
+          <div class="project-stage-steps">
+            <span><b>01</b> Signal ingestion</span>
+            <span><b>02</b> Model reasoning</span>
+            <span><b>03</b> Automated distribution</span>
+          </div>
         </div>
-      </div>
     <div class="projects-grid">
 
       <!-- Stock Sentiment -->
@@ -437,7 +476,7 @@ export const markup = `
       <button type="button" class="btn btn-primary" data-contact-open>Get in Touch</button>
     </div>
   </div>
-  <div class="footer-copy">&copy; 2025 Karthik Punati. Built with precision.</div>
+  <div class="footer-copy">&copy; <span id="footer-year">2026</span> Karthik Punati. Built with precision.</div>
 </footer>
 
 <div class="contact-modal" id="contact-modal" aria-hidden="true">

@@ -1,24 +1,63 @@
+// src/sections/spotlight.js — glow-card spotlight effect
+// Fixes: cache card list at init, cache rects, refresh only on resize/scroll,
+// throttle pointer updates with a rAF flag to prevent per-event layout thrash.
+
 export function initSpotlight() {
-  const syncPointer = (e) => {
-    const { clientX: x, clientY: y } = e;
-    const cards = document.querySelectorAll('.glow-card');
-    
-    cards.forEach((card) => {
-      const rect = card.getBoundingClientRect();
-      const cardX = x - rect.left;
-      const cardY = y - rect.top;
-      
-      card.style.setProperty('--x', cardX.toFixed(2));
-      card.style.setProperty('--xp', (cardX / rect.width).toFixed(2));
-      card.style.setProperty('--y', cardY.toFixed(2));
-      card.style.setProperty('--yp', (cardY / rect.height).toFixed(2));
+  let cards = [];
+  let rects = [];
+  let rafPending = false;
+  let pendingX = 0;
+  let pendingY = 0;
+
+  function cacheCards() {
+    cards = Array.from(document.querySelectorAll('.glow-card'));
+    cacheRects();
+  }
+
+  function cacheRects() {
+    rects = cards.map(card => card.getBoundingClientRect());
+  }
+
+  function applySpotlight() {
+    rafPending = false;
+    const x = pendingX;
+    const y = pendingY;
+    cards.forEach((card, i) => {
+      const rect = rects[i];
+      if (!rect) return;
+      card.style.setProperty('--x', (x - rect.left).toFixed(1));
+      card.style.setProperty('--xp', ((x - rect.left) / rect.width).toFixed(3));
+      card.style.setProperty('--y', (y - rect.top).toFixed(1));
+      card.style.setProperty('--yp', ((y - rect.top) / rect.height).toFixed(3));
     });
+  }
+
+  const onPointerMove = (e) => {
+    pendingX = e.clientX;
+    pendingY = e.clientY;
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(applySpotlight);
+    }
   };
 
-  document.addEventListener('pointermove', syncPointer);
-  
-  // Expose a way to cleanup if needed (though not strictly necessary for this SPA)
+  // Debounced rect refresh on resize and scroll
+  let resizeTimer;
+  const onResize = () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(cacheRects, 150);
+  };
+
+  document.addEventListener('pointermove', onPointerMove, { passive: true });
+  window.addEventListener('resize', onResize, { passive: true });
+  // Rect positions change on scroll too (fixed elements excluded, but cards scroll with page)
+  window.addEventListener('scroll', onResize, { passive: true });
+
+  cacheCards();
+
   return () => {
-    document.removeEventListener('pointermove', syncPointer);
+    document.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('scroll', onResize);
   };
 }

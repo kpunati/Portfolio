@@ -16,7 +16,7 @@ export function initDataTerrain() {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
-    antialias: true,
+    antialias: !isMobile,   // MSAA disabled on mobile — halves GPU work, no visible diff on point cloud
     powerPreference: 'high-performance'
   });
   renderer.setPixelRatio(DPR);

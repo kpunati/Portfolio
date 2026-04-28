@@ -3,14 +3,7 @@
 // Called by main.js after markup is injected.
 
 export function initParticles(options = {}) {
-
-const revealEls = document.querySelectorAll('.reveal');
-const revealObs = new IntersectionObserver((entries) => {
-  entries.forEach(
-    e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); } }
-  );
-}, { threshold: 0.13 });
-revealEls.forEach(el => revealObs.observe(el));
+// Scroll reveal is now handled by GSAP ScrollTrigger in gsap-scroll.js
 
 document.querySelectorAll('.embed-shell').forEach(shell => {
   shell.querySelectorAll('.embed-tab').forEach(tab => {
@@ -57,8 +50,10 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
       }
     }
   }
-  window.addEventListener('resize', resize);
-  document.addEventListener('mousemove', e=>{ mouse.x=e.clientX; mouse.y=e.clientY; });
+  // Debounce resize so buildGrid() isn't called on every pixel
+  let _resizeTimer;
+  window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(resize, 160); });
+  document.addEventListener('mousemove', e=>{ mouse.x=e.clientX; mouse.y=e.clientY; }, {passive:true});
   document.addEventListener('scroll', ()=>{ scrollY=window.scrollY; }, {passive:true});
 
   function draw(){
@@ -145,7 +140,9 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     camera.aspect=W/H;
     camera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', resize);
+  // Debounce helix resize
+  let _helixResizeTimer;
+  window.addEventListener('resize', () => { clearTimeout(_helixResizeTimer); _helixResizeTimer = setTimeout(resize, 160); });
   resize();
 
   const TURNS=5, PPT=42, TOTAL=TURNS*PPT, HEIGHT=8, HRAD=1.35;

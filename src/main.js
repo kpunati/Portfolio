@@ -44,19 +44,26 @@ async function bootVisuals() {
     { initMomentum },
     { initLayers },
     { initSpotlight },
+    { initGSAPScrollAnimations },
   ] = await Promise.all([
     import('./sections/particles.js'),
     import('./sections/momentum.js'),
     import('./sections/layers.js'),
     import('./sections/spotlight.js'),
+    import('./sections/gsap-scroll.js'),
   ]);
 
   initParticles({ prefersReducedMotion });
   initMomentum();
   initLayers();
+
   if (!prefersReducedMotion) {
     initSpotlight();
   }
+
+  // GSAP ScrollTrigger animations — handles section progress vars,
+  // scroll reveal, project sidebar scrub, and hero typewriter.
+  initGSAPScrollAnimations();
 
   if (!prefersReducedMotion) {
     whenIdle(async () => {

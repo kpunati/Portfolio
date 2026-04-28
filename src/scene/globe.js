@@ -119,6 +119,8 @@ export function initGlobe() {
   // Interaction
   var isDrag=false, prevM={x:0,y:0}, autoRot=true, autoSpd=.0006;
   var globeLeft = canvas.parentElement;
+  // Hoist Raycaster — create once, reuse on every mousemove (avoids GC churn)
+  var _ray = new THREE.Raycaster();
   globeLeft.addEventListener('mousedown',function(e){isDrag=true;autoRot=false;prevM={x:e.clientX,y:e.clientY};});
   globeLeft.addEventListener('mousemove',function(e){
     var rect=globeLeft.getBoundingClientRect();
@@ -130,7 +132,7 @@ export function initGlobe() {
       prevM={x:e.clientX,y:e.clientY};
       document.getElementById('g-tooltip').style.display='none'; return;
     }
-    var ray=new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(mx,my),camera);
+    var ray=_ray; ray.setFromCamera(new THREE.Vector2(mx,my),camera);
     var hits=ray.intersectObject(eqMesh);
     if(hits.length&&GS.eq[hits[0].instanceId]){
       var q=GS.eq[hits[0].instanceId];
