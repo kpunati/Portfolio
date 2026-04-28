@@ -10,16 +10,41 @@ export function initMomentum() {
   /* ── Shared scroll state ── */
   var SY = window.scrollY || 0;
   var needsUiUpdate = true;
+  var rectCache = {};
+
+  function updateCache() {
+    sections.forEach(function(id) {
+      var el = document.getElementById(id);
+      if(el) {
+        var rect = el.getBoundingClientRect();
+        rectCache[id] = { top: rect.top + SY, height: rect.height };
+      }
+    });
+    projectCards.forEach(function(card, i) {
+      var rect = card.getBoundingClientRect();
+      rectCache['card-' + i] = { top: rect.top + SY, height: rect.height };
+    });
+    if(projectsSection) {
+      var rect = projectsSection.getBoundingClientRect();
+      rectCache['projects-section'] = { top: rect.top + SY, height: rect.height };
+    }
+  }
+
   window.addEventListener('scroll', function(){
     SY = window.scrollY;
     needsUiUpdate = true;
   }, {passive:true});
-  window.addEventListener('resize', function(){ needsUiUpdate = true; });
+
+  var resizeTimeout;
+  window.addEventListener('resize', function(){ 
+    needsUiUpdate = true; 
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(updateCache, 150);
+  });
 
   /* ── Helpers ── */
   function sectionTop(id){
-    var el=document.getElementById(id)||document.querySelector('#'+id);
-    return el ? el.getBoundingClientRect().top + SY : 0;
+    return rectCache[id] ? rectCache[id].top : 0;
   }
   function lerp(a,b,t){return a+(b-a)*t;}
   function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
@@ -88,10 +113,11 @@ export function initMomentum() {
   }
 
   function updateProjectProgress() {
-    if(!projectsSection) return;
-    var rect = projectsSection.getBoundingClientRect();
-    var travel = Math.max(1, rect.height - window.innerHeight);
-    projectProgress = clamp(-rect.top / travel, 0, 1);
+    var cached = rectCache['projects-section'];
+    if(!cached) return;
+    var top = cached.top - SY;
+    var travel = Math.max(1, cached.height - window.innerHeight);
+    projectProgress = clamp(-top / travel, 0, 1);
     document.documentElement.style.setProperty('--project-local-progress', projectProgress.toFixed(3));
   }
 
@@ -103,11 +129,14 @@ export function initMomentum() {
     var bestIndex = -1;
     var bestDistance = Infinity;
     projectCards.forEach(function(card, index){
-      var rect = card.getBoundingClientRect();
-      if(rect.bottom < 120 || rect.top > window.innerHeight - 80) return;
-      var center = rect.top + rect.height * 0.5;
+      var cached = rectCache['card-' + index];
+      if(!cached) return;
+      var top = cached.top - SY;
+      var bottom = top + cached.height;
+      if(bottom < 120 || top > window.innerHeight - 80) return;
+      var center = top + cached.height * 0.5;
       var distance = Math.abs(center - viewportCenter);
-      var visible = clamp((Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)) / Math.max(1, rect.height), 0, 1);
+      var visible = clamp((Math.min(bottom, window.innerHeight) - Math.max(top, 0)) / Math.max(1, cached.height), 0, 1);
       var depth = clamp(1 - distance / Math.max(1, window.innerHeight * 0.62), 0, 1);
       card.style.setProperty('--card-depth', depth.toFixed(3));
       card.style.setProperty('--card-visible', visible.toFixed(3));
@@ -270,6 +299,7 @@ export function initMomentum() {
       needsUiUpdate = false;
     }
   }
+  updateCache();
   requestAnimationFrame(loop);
 
 })();

@@ -524,3 +524,89 @@ footer::before { content: ''; position: absolute; inset: -60px 0 0; z-index: -1;
   pointer-events: none;
   border: none;
 }
+
+/* ─── LIQUID GLASS LOADER ────────────────────────────────────────── */
+#liquid-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 6, 8, 0.88);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 1.2s;
+}
+
+#liquid-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-liquid-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  filter: url('#goo');
+}
+
+.loader-blob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: blob-move 4.2s infinite ease-in-out;
+  box-shadow: 0 0 40px rgba(212, 166, 82, 0.3);
+}
+
+.loader-blob:nth-child(2) {
+  width: 52px;
+  height: 52px;
+  background: #5EEAD4;
+  animation-delay: -1.2s;
+  box-shadow: 0 0 30px rgba(94, 234, 212, 0.2);
+}
+
+.loader-blob:nth-child(3) {
+  width: 44px;
+  height: 44px;
+  background: #B8A0CC;
+  animation-delay: -2.8s;
+  box-shadow: 0 0 25px rgba(184, 160, 204, 0.2);
+}
+
+@keyframes blob-move {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33% { transform: translate(-25%, -70%) scale(1.2); }
+  66% { transform: translate(35%, 15%) scale(0.85); }
+}
+
+.loader-text {
+  margin-top: var(--space-10);
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  animation: pulse-text 2s infinite ease-in-out;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.35; transform: scale(0.98); }
+  50% { opacity: 0.85; transform: scale(1); }
+}
+
+.loader-svg {
+  position: absolute;
+  width: 0;
+  height: 0;
+  visibility: hidden;
+}

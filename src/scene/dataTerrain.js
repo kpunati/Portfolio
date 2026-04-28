@@ -11,7 +11,7 @@ export function initDataTerrain() {
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isMobile = window.innerWidth < 760;
-  const DPR = Math.min(window.devicePixelRatio || 1, isMobile ? 1.35 : 1.8);
+  const DPR = Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 1.8);
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -49,12 +49,23 @@ export function initDataTerrain() {
   const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
   const lerp = (a, b, t) => a + (b - a) * t;
 
+  const rectCache = {};
+  function updateCache() {
+    ['projects', 'dashboards', 'about'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        rectCache[id] = { top: rect.top + window.scrollY, height: rect.height };
+      }
+    });
+  }
+
   function sectionProgress(id, start = 0.92, end = 0.08) {
-    const el = document.getElementById(id);
-    if (!el) return 0;
-    const rect = el.getBoundingClientRect();
+    const cached = rectCache[id];
+    if (!cached) return 0;
+    const top = cached.top - window.scrollY;
     const vh = window.innerHeight || 1;
-    return clamp((vh * start - rect.top) / (vh * (start - end) + rect.height * 0.35));
+    return clamp((vh * start - top) / (vh * (start - end) + cached.height * 0.35));
   }
 
   function updateScroll() {
@@ -87,10 +98,12 @@ export function initDataTerrain() {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    updateCache();
   }
   window.addEventListener('resize', resize);
   resize();
   updateScroll();
+  updateCache();
 
   const terrainUniforms = {
     uTime: { value: 0 },

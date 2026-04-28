@@ -1,5 +1,24 @@
 // src/markup.js — Full portfolio HTML structure
 export const markup = `
+<!-- ─── LIQUID GLASS LOADER ────────────────────────────────────────── -->
+<div id="liquid-loader">
+  <div class="loader-liquid-wrap">
+    <div class="loader-blob"></div>
+    <div class="loader-blob"></div>
+    <div class="loader-blob"></div>
+  </div>
+  <div class="loader-text">Initializing Systems</div>
+  <svg class="loader-svg">
+    <defs>
+      <filter id="goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+        <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+      </filter>
+    </defs>
+  </svg>
+</div>
+
 <!-- ─── GLOBAL BACKGROUND CANVASES (fixed, full-page) ─────── -->
 <!-- ─── JOURNEY RAIL ────────────────────────────────────────── -->
 <nav class="journey-rail" id="journey-rail" aria-label="Page sections">

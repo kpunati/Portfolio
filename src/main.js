@@ -75,11 +75,19 @@ function boot() {
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      bootVisuals().catch((error) => {
+      bootVisuals().then(() => {
+        const loader = document.getElementById('liquid-loader');
+        if (loader) {
+          setTimeout(() => loader.classList.add('hidden'), 800);
+        }
+      }).catch((error) => {
         console.error('main.js: visual boot failed', error);
+        const loader = document.getElementById('liquid-loader');
+        if (loader) loader.classList.add('hidden');
       });
     });
   });
+
 }
 
 if (document.readyState === 'loading') {

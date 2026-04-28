@@ -28,7 +28,12 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const SPACING=52, RADIUS=130, REPEL=34, DRIFT=0.14, CONN=98, DOT_R=1.3;
-  let W, H, mouse={x:-999,y:-999}, nodes=[], grid=[], cols=0, rows=0, scrollY=0;
+  let W, H, mouse={x:-999,y:-999}, nodes=[], grid=[], cols=0, rows=0, scrollY=0, isVisible=true;
+
+  const observer = new IntersectionObserver((entries) => {
+    isVisible = entries[0].isIntersecting;
+  }, { threshold: 0.01 });
+  observer.observe(canvas);
 
   window._particleHooks = window._particleHooks || { densityBoost: 0 };
 
@@ -57,6 +62,8 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   document.addEventListener('scroll', ()=>{ scrollY=window.scrollY; }, {passive:true});
 
   function draw(){
+    requestAnimationFrame(draw);
+    if(!isVisible) return;
     ctx.clearRect(0,0,W,H);
     const scrollZone = scrollY / (document.body.scrollHeight - H);
     const inProjects = scrollZone > 0.12 && scrollZone < 0.45;
@@ -105,8 +112,6 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
       ctx.fillStyle=n.plum?`rgba(150,120,180,${(0.22+boost*.42) * baseAlpha})`:`rgba(212,166,82,${(0.22+boost*.42) * baseAlpha})`;
       ctx.fill();
     });
-
-    requestAnimationFrame(draw);
   }
   resize(); draw();
 })();
@@ -117,8 +122,9 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   const canvas = document.getElementById('helix-canvas');
   if(!canvas) return;
 
+  const isMobile = window.innerWidth < 760;
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.2 : 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace || renderer.outputColorSpace;
 
@@ -205,17 +211,18 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   helixGroup.add(helixGlow, helix1, helix2, rungGroup);
   scene.add(helixGroup);
 
-  let targetRotY=0, currentRotY=0, currentX=0, currentY=0, scrollY=0;
+  let targetRotY=0, currentRotY=0, currentX=0, currentY=0, scrollY=0, isVisible=true;
 
-  document.addEventListener('mousemove', e=>{
-    targetRotY = (e.clientX/window.innerWidth - .5) * .7;
-  });
-  window.addEventListener('scroll', ()=>{ scrollY=window.scrollY; }, {passive:true});
+  const observer = new IntersectionObserver((entries) => {
+    isVisible = entries[0].isIntersecting;
+  }, { threshold: 0.01 });
+  observer.observe(canvas);
 
   function getPageHeight(){ return document.body.scrollHeight - window.innerHeight; }
 
   function animate(t){
     requestAnimationFrame(animate);
+    if(!isVisible) return;
     const time = t * .001;
     const pageH = getPageHeight();
     const progress = pageH > 0 ? scrollY / pageH : 0;

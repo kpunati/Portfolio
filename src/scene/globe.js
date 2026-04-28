@@ -21,10 +21,12 @@ export function initGlobe() {
 
   var canvas = document.getElementById('globe-canvas-inner');
   var wrap   = canvas.parentElement;
+  var isMobile = window.innerWidth < 760;
   var globeHooks = window._globeHooks = window._globeHooks || { emerge: 0 };
   var renderer = new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.25 : 2));
   renderer.setClearColor(0x000000,0);
+
   var scene  = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(45,1,.1,100);
   camera.position.set(0,0,2.8);
@@ -143,11 +145,16 @@ export function initGlobe() {
   globeLeft.addEventListener('wheel',function(e){camera.position.z=Math.max(1.6,Math.min(5,camera.position.z+e.deltaY*.002));},{passive:true});
 
   // Render loop
-  var issT=0, isVis=true;
+  var issT=0, isVis=true, isInViewport=true;
   document.addEventListener('visibilitychange',function(){isVis=!document.hidden;});
+  var observer = new IntersectionObserver(function(entries){
+    isInViewport = entries[0].isIntersecting;
+  }, { threshold: 0.01 });
+  observer.observe(canvas);
+
   function loop(){
-    if(!isVis){requestAnimationFrame(loop);return;}
     requestAnimationFrame(loop);
+    if(!isVis || !isInViewport) return;
     var emerge = Math.max(0, Math.min(1, globeHooks.emerge || 0));
     var stageLift = (1 - emerge) * 0.18;
     earthMesh.position.y = stageLift;
