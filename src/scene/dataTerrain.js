@@ -742,12 +742,17 @@ export function initDataTerrain() {
   scene.add(glowPlane);
 
   let visible = true;
+  let isInViewport = true;
   let contourFrame = 0;
   document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
+  const observer = new IntersectionObserver((entries) => {
+    isInViewport = entries[0].isIntersecting;
+  }, { threshold: 0.001 });
+  observer.observe(canvas);
 
   function animate() {
     requestAnimationFrame(animate);
-    if (!visible) return;
+    if (!visible || !isInViewport) return;
 
     const elapsed = clock.getElapsedTime();
     const time = prefersReducedMotion ? 0 : elapsed;
