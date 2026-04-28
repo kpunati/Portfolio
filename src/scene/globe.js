@@ -40,10 +40,10 @@ export function initGlobe() {
 
   // Earth
   var texLoader = new THREE.TextureLoader();
-  var earthTex  = texLoader.load('earth-texture.jpg',
+  var earthTex  = texLoader.load(import.meta.env.BASE_URL + 'earth-texture.jpg',
     function(){ document.getElementById('g-loading').classList.add('hidden'); },
     undefined,
-    function(){ document.getElementById('g-loading').classList.add('hidden'); }
+    function(e){ console.warn('Globe texture failed:', e); document.getElementById('g-loading').classList.add('hidden'); }
   );
   earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   var earthMat  = new THREE.MeshPhongMaterial({map:earthTex,specular:new THREE.Color(0x1a2233),shininess:4});
@@ -196,38 +196,58 @@ export function initGlobe() {
   }
   function fetchFire(){
     var cached=localStorage.getItem(FIRE_CACHE_KEY);
-    if(cached){var d=JSON.parse(cached);if(Date.now()-d.ts<86400000){GS.fire=d.data;renderFireUI();updateFire();return;}}
-    // NASA FIRMS VIIRS global 24h hotspot CSV — no auth, truly global
-  var firmsUrl = 'https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-20-viirs-c2/csv/J1_VIIRS_C2_Global_24h.csv';
-  fetch(firmsUrl)
-    .then(function(r){return r.text();})
-    .then(function(csv){
-      var lines=csv.trim().split('\n');
-      var hdr=lines[0].split(',');
-      var latI=hdr.indexOf('latitude'), lonI=hdr.indexOf('longitude'), brightI=hdr.indexOf('bright_ti4');
-      if(latI<0){latI=0;lonI=1;brightI=2;}
-      var pts=[];
-      for(var i=1;i<lines.length;i++){
-        var c=lines[i].split(',');
-        var la=parseFloat(c[latI]),lo=parseFloat(c[lonI]),br=parseFloat(c[brightI])||300;
-        if(!isNaN(la)&&!isNaN(lo))pts.push({lat:la,lon:lo,bright:br});
-      }
-      // Sort by brightness, keep top 600 (global spread)
-      pts.sort(function(a,b){return b.bright-a.bright;});
-      GS.fire=pts.slice(0,600);
-      localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
-      renderFireUI(); updateFire();
-    }).catch(function(e){
-      console.warn('FIRMS fail, falling back to EONET',e);
-      fetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=500&days=60')
-        .then(function(r){return r.json();})
-        .then(function(j){
-          GS.fire=j.events.flatMap(function(e){return e.geometry.map(function(g){return{lat:g.coordinates[1],lon:g.coordinates[0]};});})
-            .filter(function(f){return f.lat&&f.lon&&Math.abs(f.lat)<=90&&Math.abs(f.lon)<=180;});
-          localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
-          renderFireUI(); updateFire();
-        }).catch(function(e2){console.warn('EONET also failed',e2);});
-    });
+    if(cached){var d=JSON.parse(cached);if(Date.now()-d.ts<21600000){GS.fire=d.data;renderFireUI();updateFire();return;}}
+
+    // Primary: NASA FIRMS API with DEMO_KEY — CORS-enabled, truly global
+    // DEMO_KEY is NASA's public free-tier key, no registration needed
+    var today = new Date().toISOString().slice(0,10);
+    var firmsApi = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv/DEMO_KEY/VIIRS_SNPP_NRT/world/1/' + today;
+    fetch(firmsApi)
+      .then(function(r){
+        if(!r.ok) throw new Error('FIRMS API ' + r.status);
+        return r.text();
+      })
+      .then(function(csv){
+        var lines=csv.trim().split('\n');
+        if(lines.length<2) throw new Error('FIRMS empty');
+        var hdr=lines[0].split(',');
+        var latI=hdr.indexOf('latitude'), lonI=hdr.indexOf('longitude'), brightI=hdr.indexOf('bright_ti4');
+        if(latI<0){latI=0;lonI=1;brightI=2;}
+        var pts=[];
+        for(var i=1;i<lines.length;i++){
+          var c=lines[i].split(',');
+          var la=parseFloat(c[latI]),lo=parseFloat(c[lonI]),br=parseFloat(c[brightI])||320;
+          if(!isNaN(la)&&!isNaN(lo))pts.push({lat:la,lon:lo,bright:br});
+        }
+        pts.sort(function(a,b){return b.bright-a.bright;});
+        GS.fire=pts.slice(0,600);
+        localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
+        renderFireUI(); updateFire();
+      })
+      .catch(function(e){
+        console.warn('FIRMS API failed, trying EONET:', e);
+        // Fallback: EONET wildfires — open events, broad 90-day window for global coverage
+        fetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=500&days=90')
+          .then(function(r){return r.json();})
+          .then(function(j){
+            var pts = j.events.flatMap(function(ev){
+              return ev.geometry.map(function(g){
+                return {lat:g.coordinates[1], lon:g.coordinates[0], bright:320};
+              });
+            }).filter(function(f){
+              return f.lat&&f.lon&&Math.abs(f.lat)<=90&&Math.abs(f.lon)<=180;
+            });
+            // Deduplicate (EONET can repeat coordinates)
+            var seen={};
+            GS.fire = pts.filter(function(f){
+              var k=f.lat.toFixed(1)+','+f.lon.toFixed(1);
+              if(seen[k]) return false; seen[k]=true; return true;
+            });
+            localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
+            renderFireUI(); updateFire();
+          })
+          .catch(function(e2){console.warn('EONET also failed',e2);});
+      });
   }
   function renderFireUI(){
     sT('gc-fire-count',GS.fire.length); sT('gb-fire',GS.fire.length); sT('gc-ftotal',GS.fire.length);

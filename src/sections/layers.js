@@ -7,29 +7,32 @@ export function initLayers() {
   const hooks = window._particleHooks = window._particleHooks || {};
 
   const hero = document.getElementById('hero');
-  let hoverStart = null;
+  let isHovering = false;
   let pressure = 0;
   let ticking = true;
 
-  const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
-  const smooth = (from, to, rate) => from + (to - from) * rate;
-
   if (hero) {
-    hero.addEventListener('mouseenter', () => { hoverStart = performance.now(); });
-    hero.addEventListener('mousemove', () => {
-      if (hoverStart === null) hoverStart = performance.now();
-    });
-    hero.addEventListener('mouseleave', () => { hoverStart = null; });
+    hero.addEventListener('mouseenter', () => { isHovering = true; });
+    hero.addEventListener('mouseleave', () => { isHovering = false; });
   }
 
-  function frame(now) {
+  function frame() {
     if (!ticking) return;
     requestAnimationFrame(frame);
 
     const heroRect = hero ? hero.getBoundingClientRect() : null;
     const heroVisible = heroRect ? heroRect.bottom > 0 && heroRect.top < window.innerHeight : false;
-    const dwell = hoverStart && heroVisible ? clamp((now - hoverStart) / 3200) : 0;
-    pressure = smooth(pressure, dwell, hoverStart ? 0.055 : 0.08);
+    
+    // If we've scrolled past the hero, force hovering to false
+    const targetPressure = (isHovering && heroVisible) ? 1.0 : 0.0;
+    
+    // Fluidly increment or decrement pressure towards the target at a constant rate
+    // 0.006 per frame = ~2.8 seconds to fully transition either way
+    if (pressure < targetPressure) {
+      pressure = Math.min(1.0, pressure + 0.006);
+    } else if (pressure > targetPressure) {
+      pressure = Math.max(0.0, pressure - 0.006);
+    }
 
     hooks.densityBoost = (hooks.densityBoost || 0) + pressure * 1.2;
     hooks.helixBoost = pressure * 0.8;

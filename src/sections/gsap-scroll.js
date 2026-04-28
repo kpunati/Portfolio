@@ -159,7 +159,22 @@ function initProjectSidebar() {
     animation: tl
   });
 
-  // Also keep the step-indicator highlight in sync
+  // Slide the entire sidebar DOWN as the user scrolls through the stage
+  // so it physically follows the active card position
+  const slideDown = gsap.timeline({ paused: true });
+  slideDown.fromTo('.project-stage-copy',
+    { y: 0 },
+    { y: 160, ease: 'none', duration: 1 }
+  );
+  ScrollTrigger.create({
+    trigger: '#projects',
+    start: 'top 18%',
+    end: 'bottom 22%',
+    scrub: 1.4,
+    animation: slideDown
+  });
+
+  // Step-indicator highlight in sync
   ScrollTrigger.create({
     trigger: '#projects',
     start: 'top 18%',
@@ -212,6 +227,21 @@ function initHeroEntrance() {
         { opacity: 1, y: 0, duration: 0.028, ease: 'none' },
         lineIdx === 0 ? (i * 0.028 + 0.05) : ('>' + (i === 0 ? 0 : -0.016))
       );
+    });
+  });
+
+  // Once typewriter finishes, start a continuous staggered wave across every character
+  tl.eventCallback('onComplete', () => {
+    gsap.to(eyebrow.querySelectorAll('.eyebrow-char'), {
+      y: -3,
+      duration: 0.88,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      stagger: {
+        each: 0.055,
+        repeat: -1
+      }
     });
   });
 }

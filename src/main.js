@@ -85,7 +85,10 @@ function boot() {
       bootVisuals().then(() => {
         const loader = document.getElementById('liquid-loader');
         if (loader) {
-          setTimeout(() => loader.classList.add('hidden'), 800);
+          // Trigger the liquid bar fill
+          loader.classList.add('expanding');
+          // Wait for the bar to fill (1400ms), then fade out the loader
+          setTimeout(() => loader.classList.add('hidden'), 1400);
         }
       }).catch((error) => {
         console.error('main.js: visual boot failed', error);
