@@ -38,7 +38,7 @@ export function initGlobe() {
 
   // Earth
   var texLoader = new THREE.TextureLoader();
-  var earthTex  = texLoader.load('/earth-texture.jpg',
+  var earthTex  = texLoader.load('earth-texture.jpg',
     function(){ document.getElementById('g-loading').classList.add('hidden'); },
     undefined,
     function(){ document.getElementById('g-loading').classList.add('hidden'); }
