@@ -67,6 +67,29 @@ export function initGlobe() {
     }
     return selected.slice(0,max);
   }
+  function makeGlobalFireReference(){
+    var anchors=[
+      {lat:54,lon:-124,bright:344},{lat:38,lon:-121,bright:352},{lat:18,lon:-98,bright:336},
+      {lat:-9,lon:-62,bright:358},{lat:-22,lon:-48,bright:342},{lat:-35,lon:-70,bright:330},
+      {lat:8,lon:12,bright:356},{lat:-2,lon:28,bright:348},{lat:-18,lon:32,bright:338},
+      {lat:46,lon:16,bright:326},{lat:58,lon:88,bright:350},{lat:31,lon:104,bright:340},
+      {lat:21,lon:78,bright:346},{lat:-6,lon:116,bright:334},{lat:-19,lon:146,bright:354},
+      {lat:-31,lon:121,bright:342}
+    ];
+    var pts=[];
+    anchors.forEach(function(a,i){
+      for(var j=0;j<8;j++){
+        var lat=a.lat+((j%4)-1.5)*1.8;
+        var lon=a.lon+(Math.floor(j/4)-0.5)*4.2+(i%3-1)*1.4;
+        pts.push({
+          lat:Math.max(-82,Math.min(82,lat)),
+          lon:((lon+540)%360)-180,
+          bright:a.bright+j*2+(i%4)
+        });
+      }
+    });
+    return balancedFireSample(pts,600);
+  }
 
   var canvas = document.getElementById('globe-canvas-inner');
   if (!canvas) return;
@@ -91,9 +114,9 @@ export function initGlobe() {
   // Earth
   var texLoader = new THREE.TextureLoader();
   var earthTex  = texLoader.load(import.meta.env.BASE_URL + 'earth-texture.jpg',
-    function(){ document.getElementById('g-loading').classList.add('hidden'); },
+    function(){ var loading=document.getElementById('g-loading'); if(loading) loading.classList.add('hidden'); },
     undefined,
-    function(e){ console.warn('Globe texture failed:', e); document.getElementById('g-loading').classList.add('hidden'); }
+    function(e){ console.warn('Globe texture failed:', e); var loading=document.getElementById('g-loading'); if(loading) loading.classList.add('hidden'); }
   );
   earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   var earthMat  = new THREE.MeshPhongMaterial({map:earthTex,specular:new THREE.Color(0x1a2233),shininess:4});
@@ -246,7 +269,13 @@ export function initGlobe() {
   }
   function fetchFire(){
     var cached=localStorage.getItem(FIRE_CACHE_KEY);
-    if(cached){var d=JSON.parse(cached);if(Date.now()-d.ts<21600000){GS.fire=d.data;setFireSource(d.source||'Source: NASA fire data',d.mode);renderFireUI();updateFire();return;}}
+    if(cached){
+      var d=JSON.parse(cached);
+      if(Date.now()-d.ts<21600000 && d.data && d.data.length && fireSpread(d.data)>1){
+        GS.fire=d.data;setFireSource(d.source||'Source: NASA fire data',d.mode);renderFireUI();updateFire();return;
+      }
+      localStorage.removeItem(FIRE_CACHE_KEY);
+    }
 
     fetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=500&days=90')
       .then(function(r){return r.json();})
@@ -256,7 +285,7 @@ export function initGlobe() {
             return {lat:g.coordinates[1], lon:g.coordinates[0], bright:320};
           });
         }).filter(function(f){
-          return f.lat&&f.lon&&Math.abs(f.lat)<=90&&Math.abs(f.lon)<=180;
+          return !isNaN(f.lat)&&!isNaN(f.lon)&&Math.abs(f.lat)<=90&&Math.abs(f.lon)<=180;
         });
         var seen={};
         pts = pts.filter(function(f){
@@ -282,7 +311,13 @@ export function initGlobe() {
             localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire,source:'Source: NASA FIRMS global VIIRS reference layer',mode:'reference'}));
             renderFireUI(); updateFire();
           })
-          .catch(function(e2){console.warn('FIRMS reference also failed',e2);});
+          .catch(function(e2){
+            console.warn('FIRMS reference also failed, using bundled global reference',e2);
+            GS.fire = makeGlobalFireReference();
+            setFireSource('Source: bundled global wildfire reference layer','reference');
+            localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire,source:'Source: bundled global wildfire reference layer',mode:'reference'}));
+            renderFireUI(); updateFire();
+          });
       });
   }
   function renderFireUI(){

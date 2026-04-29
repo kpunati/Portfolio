@@ -142,9 +142,15 @@ function initProjectSidebar() {
 
   function setProjectSystemOffset(index, progress) {
     if (!stageCopy) return;
+    if (window.innerWidth <= 900) {
+      stageCopy.style.setProperty('--system-y', '0px');
+      stageCopy.style.transform = '';
+      return;
+    }
     const segmentProgress = Math.min(1, Math.max(0, (progress * 3) - index));
     const targetY = Math.round(index * 92 + segmentProgress * 30);
     stageCopy.style.setProperty('--system-y', `${targetY}px`);
+    stageCopy.style.transform = `translate3d(0, ${targetY}px, 0)`;
   }
 
   // Stack all panels absolutely inside their wrapper

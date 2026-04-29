@@ -93,9 +93,15 @@ export function initMomentum() {
 
   function updateProjectSystemOffset(index) {
     if(!projectStageCopy || index < 0) return;
+    if(window.innerWidth <= 900) {
+      projectStageCopy.style.setProperty('--system-y', '0px');
+      projectStageCopy.style.transform = '';
+      return;
+    }
     var segmentProgress = clamp((projectProgress * projectCards.length) - index, 0, 1);
     var targetY = Math.round(index * 92 + segmentProgress * 30);
     projectStageCopy.style.setProperty('--system-y', targetY + 'px');
+    projectStageCopy.style.transform = 'translate3d(0, ' + targetY + 'px, 0)';
   }
 
   function setActiveProject(index) {
