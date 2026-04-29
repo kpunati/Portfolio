@@ -16,6 +16,7 @@ export function initSpotlight() {
 
   function cacheRects() {
     rects = cards.map(card => card.getBoundingClientRect());
+    if (pendingX || pendingY) applySpotlight();
   }
 
   function applySpotlight() {
@@ -41,23 +42,25 @@ export function initSpotlight() {
     }
   };
 
-  // Debounced rect refresh on resize and scroll
-  let resizeTimer;
-  const onResize = () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(cacheRects, 150);
+  let rectRefreshPending = false;
+  const requestRectRefresh = () => {
+    if (rectRefreshPending) return;
+    rectRefreshPending = true;
+    requestAnimationFrame(() => {
+      rectRefreshPending = false;
+      cacheRects();
+    });
   };
 
   document.addEventListener('pointermove', onPointerMove, { passive: true });
-  window.addEventListener('resize', onResize, { passive: true });
-  // Rect positions change on scroll too (fixed elements excluded, but cards scroll with page)
-  window.addEventListener('scroll', onResize, { passive: true });
+  window.addEventListener('resize', requestRectRefresh, { passive: true });
+  window.addEventListener('scroll', requestRectRefresh, { passive: true });
 
   cacheCards();
 
   return () => {
     document.removeEventListener('pointermove', onPointerMove);
-    window.removeEventListener('resize', onResize);
-    window.removeEventListener('scroll', onResize);
+    window.removeEventListener('resize', requestRectRefresh);
+    window.removeEventListener('scroll', requestRectRefresh);
   };
 }

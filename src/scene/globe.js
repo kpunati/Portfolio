@@ -1,11 +1,17 @@
+import * as ThreeModule from 'three';
+
 export function initGlobe() {
-  if (typeof THREE === 'undefined') {
-    setTimeout(initGlobe, 300); return;
+  var THREE = window.THREE || ThreeModule;
+  if (!THREE) {
+    console.warn('Globe unavailable: Three.js failed to load');
+    var loading = document.getElementById('g-loading');
+    if (loading) loading.classList.add('hidden');
+    return;
   }
 // ── GLOBE DASHBOARD ───────────────────────────────────────────────────────
 (function() {
   var GS = {eq:[],fire:[],iss:{lat:0,lon:0,alt:0,vel:0,vis:'daylight'},lastISS:0};
-  var FIRE_CACHE_KEY = 'gfire3';
+  var FIRE_CACHE_KEY = 'gfire4';
   var GLOBE_R = 1.0;
   function mC(m){return m<2.5?'#C084FC':m<4?'#E040FB':m<6?'#F000FF':'#FF00CC';}
   function mB(m){return m<2.5?'rgba(192,132,252,.15)':m<4?'rgba(224,64,251,.15)':m<6?'rgba(240,0,255,.15)':'rgba(255,0,204,.15)';}
@@ -16,10 +22,54 @@ export function initGlobe() {
     if (lon >= -170 && lon < -30 && f.lat >= 0) return 'na';
     if (lon >= -90 && lon < -30 && f.lat < 0) return 'sa';
     if (lon >= -20 && lon <= 55 && f.lat >= -35 && f.lat <= 38) return 'af';
-    return 'asia';
+    if (lon >= 55 && lon <= 180 && f.lat >= -10) return 'asia';
+    return 'oc';
+  }
+  function fireSpread(points){
+    var seen={};
+    points.forEach(function(f){ seen[fireRegion(f)] = true; });
+    return Object.keys(seen).length;
+  }
+  function setFireSource(text, mode){
+    sT('gc-fire-source', text);
+    var badge=document.getElementById('gc-fire-mode');
+    if(!badge) return;
+    badge.classList.remove('is-live','is-reference','is-resolving');
+    badge.classList.add(mode==='live'?'is-live':mode==='reference'?'is-reference':'is-resolving');
+    badge.innerHTML='<i></i>'+(mode==='reference'?'Fires ref':mode==='live'?'Fires live':'Fires');
+  }
+  function parseFireCSV(csv){
+    var lines=csv.trim().split('\n');
+    if(lines.length<2) throw new Error('FIRMS empty');
+    var hdr=lines[0].split(',');
+    var latI=hdr.indexOf('latitude'), lonI=hdr.indexOf('longitude'), brightI=hdr.indexOf('bright_ti4');
+    if(latI<0){latI=0;lonI=1;brightI=2;}
+    var pts=[];
+    for(var i=1;i<lines.length;i++){
+      var c=lines[i].split(',');
+      var la=parseFloat(c[latI]),lo=parseFloat(c[lonI]),br=parseFloat(c[brightI])||320;
+      if(!isNaN(la)&&!isNaN(lo))pts.push({lat:la,lon:lo,bright:br});
+    }
+    return pts;
+  }
+  function balancedFireSample(points,max){
+    var buckets={na:[],sa:[],af:[],asia:[],oc:[]};
+    points.forEach(function(f){ buckets[fireRegion(f)].push(f); });
+    Object.keys(buckets).forEach(function(k){ buckets[k].sort(function(a,b){return (b.bright||0)-(a.bright||0);}); });
+    var target=Math.max(1,Math.floor(max/Object.keys(buckets).length));
+    var selected=[];
+    Object.keys(buckets).forEach(function(k){ selected=selected.concat(buckets[k].slice(0,target)); });
+    if(selected.length<max){
+      var used=new Set(selected);
+      points.sort(function(a,b){return (b.bright||0)-(a.bright||0);}).forEach(function(f){
+        if(selected.length<max&&!used.has(f)){ selected.push(f); used.add(f); }
+      });
+    }
+    return selected.slice(0,max);
   }
 
   var canvas = document.getElementById('globe-canvas-inner');
+  if (!canvas) return;
   var wrap   = canvas.parentElement;
   var isMobile = window.innerWidth < 760;
   var globeHooks = window._globeHooks = window._globeHooks || { emerge: 0 };
@@ -196,68 +246,54 @@ export function initGlobe() {
   }
   function fetchFire(){
     var cached=localStorage.getItem(FIRE_CACHE_KEY);
-    if(cached){var d=JSON.parse(cached);if(Date.now()-d.ts<21600000){GS.fire=d.data;renderFireUI();updateFire();return;}}
+    if(cached){var d=JSON.parse(cached);if(Date.now()-d.ts<21600000){GS.fire=d.data;setFireSource(d.source||'Source: NASA fire data',d.mode);renderFireUI();updateFire();return;}}
 
-    // Primary: NASA FIRMS API with DEMO_KEY — CORS-enabled, truly global
-    // DEMO_KEY is NASA's public free-tier key, no registration needed
-    var today = new Date().toISOString().slice(0,10);
-    var firmsApi = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv/DEMO_KEY/VIIRS_SNPP_NRT/world/1/' + today;
-    fetch(firmsApi)
-      .then(function(r){
-        if(!r.ok) throw new Error('FIRMS API ' + r.status);
-        return r.text();
-      })
-      .then(function(csv){
-        var lines=csv.trim().split('\n');
-        if(lines.length<2) throw new Error('FIRMS empty');
-        var hdr=lines[0].split(',');
-        var latI=hdr.indexOf('latitude'), lonI=hdr.indexOf('longitude'), brightI=hdr.indexOf('bright_ti4');
-        if(latI<0){latI=0;lonI=1;brightI=2;}
-        var pts=[];
-        for(var i=1;i<lines.length;i++){
-          var c=lines[i].split(',');
-          var la=parseFloat(c[latI]),lo=parseFloat(c[lonI]),br=parseFloat(c[brightI])||320;
-          if(!isNaN(la)&&!isNaN(lo))pts.push({lat:la,lon:lo,bright:br});
+    fetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=500&days=90')
+      .then(function(r){return r.json();})
+      .then(function(j){
+        var pts = j.events.flatMap(function(ev){
+          return ev.geometry.map(function(g){
+            return {lat:g.coordinates[1], lon:g.coordinates[0], bright:320};
+          });
+        }).filter(function(f){
+          return f.lat&&f.lon&&Math.abs(f.lat)<=90&&Math.abs(f.lon)<=180;
+        });
+        var seen={};
+        pts = pts.filter(function(f){
+          var k=f.lat.toFixed(1)+','+f.lon.toFixed(1);
+          if(seen[k]) return false; seen[k]=true; return true;
+        });
+        if(pts.length && fireSpread(pts)>1) {
+          GS.fire = pts.slice(0,600);
+          setFireSource('Source: NASA EONET live wildfire events','live');
+          localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire,source:'Source: NASA EONET live wildfire events',mode:'live'}));
+          renderFireUI(); updateFire();
+          return;
         }
-        pts.sort(function(a,b){return b.bright-a.bright;});
-        GS.fire=pts.slice(0,600);
-        localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
-        renderFireUI(); updateFire();
+        throw new Error('EONET region-limited');
       })
       .catch(function(e){
-        console.warn('FIRMS API failed, trying EONET:', e);
-        // Fallback: EONET wildfires — open events, broad 90-day window for global coverage
-        fetch('https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=500&days=90')
-          .then(function(r){return r.json();})
-          .then(function(j){
-            var pts = j.events.flatMap(function(ev){
-              return ev.geometry.map(function(g){
-                return {lat:g.coordinates[1], lon:g.coordinates[0], bright:320};
-              });
-            }).filter(function(f){
-              return f.lat&&f.lon&&Math.abs(f.lat)<=90&&Math.abs(f.lon)<=180;
-            });
-            // Deduplicate (EONET can repeat coordinates)
-            var seen={};
-            GS.fire = pts.filter(function(f){
-              var k=f.lat.toFixed(1)+','+f.lon.toFixed(1);
-              if(seen[k]) return false; seen[k]=true; return true;
-            });
-            localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire}));
+        console.warn('EONET limited/unavailable, using FIRMS global reference:', e);
+        fetch('https://firms.modaps.eosdis.nasa.gov/content/notebooks/sample_viirs_snpp_071223.csv')
+          .then(function(r){return r.text();})
+          .then(function(csv){
+            GS.fire = balancedFireSample(parseFireCSV(csv),600);
+            setFireSource('Source: NASA FIRMS global VIIRS reference layer','reference');
+            localStorage.setItem(FIRE_CACHE_KEY,JSON.stringify({ts:Date.now(),data:GS.fire,source:'Source: NASA FIRMS global VIIRS reference layer',mode:'reference'}));
             renderFireUI(); updateFire();
           })
-          .catch(function(e2){console.warn('EONET also failed',e2);});
+          .catch(function(e2){console.warn('FIRMS reference also failed',e2);});
       });
   }
   function renderFireUI(){
     sT('gc-fire-count',GS.fire.length); sT('gb-fire',GS.fire.length); sT('gc-ftotal',GS.fire.length);
-    var counts={na:0,sa:0,af:0,asia:0};
+    var counts={na:0,sa:0,af:0,asia:0,oc:0};
     GS.fire.forEach(function(f){ counts[fireRegion(f)]++; });
     sT('gc-fna',counts.na);
     sT('gc-fsa',counts.sa);
     sT('gc-faf',counts.af);
     sT('gc-fasia',counts.asia);
-    sT('gc-frow',GS.fire.length-(counts.na+counts.sa+counts.af+counts.asia));
+    sT('gc-foc',counts.oc);
     if(GS.fire.length&&GS.fire[0].bright){
       var avg=Math.round(GS.fire.reduce(function(s,f){return s+(f.bright||0);},0)/GS.fire.length);
       sT('gc-fbright',avg+'K');

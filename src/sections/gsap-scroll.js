@@ -136,6 +136,16 @@ export function initGSAPScrollAnimations() {
 function initProjectSidebar() {
   const panels = document.querySelectorAll('.project-panel');
   if (panels.length < 2) return;
+  const cards = Array.from(document.querySelectorAll('.project-card'));
+  const steps = Array.from(document.querySelectorAll('.project-stage-steps span'));
+  const stageCopy = document.querySelector('.project-stage-copy');
+
+  function setProjectSystemOffset(index, progress) {
+    if (!stageCopy) return;
+    const segmentProgress = Math.min(1, Math.max(0, (progress * 3) - index));
+    const targetY = Math.round(index * 92 + segmentProgress * 30);
+    stageCopy.style.setProperty('--system-y', `${targetY}px`);
+  }
 
   // Stack all panels absolutely inside their wrapper
   gsap.set(panels, { position: 'absolute', top: 0, left: 0, right: 0, opacity: 0, y: 28 });
@@ -153,36 +163,32 @@ function initProjectSidebar() {
 
   ScrollTrigger.create({
     trigger: '#projects',
-    start: 'top 18%',
-    end: 'bottom 22%',
+    start: 'top 28%',
+    end: 'bottom 34%',
     scrub: 1.2,
     animation: tl
   });
 
-  // Slide the entire sidebar DOWN as the user scrolls through the stage
-  // so it physically follows the active card position
-  const slideDown = gsap.timeline({ paused: true });
-  slideDown.fromTo('.project-stage-copy',
-    { y: 0 },
-    { y: 160, ease: 'none', duration: 1 }
-  );
+  // Sidebar offset, active cards, and step indicators in sync with the active card.
   ScrollTrigger.create({
     trigger: '#projects',
-    start: 'top 18%',
-    end: 'bottom 22%',
-    scrub: 1.4,
-    animation: slideDown
-  });
-
-  // Step-indicator highlight in sync
-  ScrollTrigger.create({
-    trigger: '#projects',
-    start: 'top 18%',
-    end: 'bottom 22%',
+    start: 'top 28%',
+    end: 'bottom 34%',
     scrub: 0.8,
     onUpdate(self) {
       const idx = Math.min(Math.floor(self.progress * 3), 2);
       document.documentElement.style.setProperty('--active-project', String(idx));
+      document.documentElement.style.setProperty('--project-local-progress', self.progress.toFixed(3));
+      setProjectSystemOffset(idx, self.progress);
+      cards.forEach((card, cardIndex) => {
+        card.classList.toggle('is-active', cardIndex === idx);
+      });
+      steps.forEach((step, stepIndex) => {
+        const isActive = stepIndex === idx;
+        step.classList.toggle('is-active', isActive);
+        if (isActive) step.setAttribute('aria-current', 'step');
+        else step.removeAttribute('aria-current');
+      });
     }
   });
 }

@@ -86,9 +86,17 @@ export function initMomentum() {
 
   var projectCards = Array.prototype.slice.call(document.querySelectorAll('.project-card'));
   var projectSteps = Array.prototype.slice.call(document.querySelectorAll('.project-stage-steps span'));
+  var projectStageCopy = document.querySelector('.project-stage-copy');
   var projectsSection = document.getElementById('projects');
   var activeProjectIndex = -1;
   var projectProgress = 0;
+
+  function updateProjectSystemOffset(index) {
+    if(!projectStageCopy || index < 0) return;
+    var segmentProgress = clamp((projectProgress * projectCards.length) - index, 0, 1);
+    var targetY = Math.round(index * 92 + segmentProgress * 30);
+    projectStageCopy.style.setProperty('--system-y', targetY + 'px');
+  }
 
   function setActiveProject(index) {
     if(index === activeProjectIndex) return;
@@ -107,6 +115,7 @@ export function initMomentum() {
       }
     });
     document.documentElement.style.setProperty('--active-project', String(Math.max(0, index)));
+    updateProjectSystemOffset(index);
     window.dispatchEvent(new CustomEvent('portfolio:project-focus', {
       detail: { index: index, progress: projectProgress }
     }));
@@ -119,6 +128,7 @@ export function initMomentum() {
     var travel = Math.max(1, cached.height - window.innerHeight);
     projectProgress = clamp(-top / travel, 0, 1);
     document.documentElement.style.setProperty('--project-local-progress', projectProgress.toFixed(3));
+    updateProjectSystemOffset(activeProjectIndex);
   }
 
   function updateProjectFocus() {

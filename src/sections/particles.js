@@ -1,5 +1,5 @@
 // src/sections/particles.js
-// Scroll reveal, tab switcher, hero particle canvas, Three.js DNA helix with scroll journey.
+// Scroll reveal, tab switcher, Three.js DNA helix with scroll journey.
 // Called by main.js after markup is injected.
 
 export function initParticles(options = {}) {
@@ -15,101 +15,6 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
 });
 
   if (options.prefersReducedMotion) return;
-
-  (function(){
-  const canvas = document.getElementById('hero-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const SPACING=52, RADIUS=130, REPEL=34, DRIFT=0.14, CONN=98, DOT_R=1.3;
-  let W, H, mouse={x:-999,y:-999}, nodes=[], grid=[], cols=0, rows=0, scrollY=0, isVisible=true;
-
-  const observer = new IntersectionObserver((entries) => {
-    isVisible = entries[0].isIntersecting;
-  }, { threshold: 0.01 });
-  observer.observe(canvas);
-
-  window._particleHooks = window._particleHooks || { densityBoost: 0 };
-
-  function resize(){
-    W=canvas.width=window.innerWidth;
-    H=canvas.height=window.innerHeight;
-    buildGrid();
-  }
-  function buildGrid(){
-    nodes=[];
-    grid=[];
-    const sp = SPACING;
-    cols=Math.ceil(W/sp)+1;
-    rows=Math.ceil(H/sp)+1;
-    for(let r=0;r<rows;r++) {
-      grid[r]=[];
-      for(let c=0;c<cols;c++){
-        const node = { ox:c*sp, oy:r*sp, x:c*sp, y:r*sp, vx:0, vy:0, row:r, col:c, plum:Math.random()<0.09 };
-        nodes.push(node);
-        grid[r][c]=node;
-      }
-    }
-  }
-  // Debounce resize so buildGrid() isn't called on every pixel
-  let _resizeTimer;
-  window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(resize, 160); });
-  document.addEventListener('mousemove', e=>{ mouse.x=e.clientX; mouse.y=e.clientY; }, {passive:true});
-  document.addEventListener('scroll', ()=>{ scrollY=window.scrollY; }, {passive:true});
-
-  function draw(){
-    requestAnimationFrame(draw);
-    if(!isVisible) return;
-    ctx.clearRect(0,0,W,H);
-    const scrollZone = scrollY / (document.body.scrollHeight - H);
-    const inProjects = scrollZone > 0.12 && scrollZone < 0.45;
-    const hooks = window._particleHooks || {};
-    const boost = hooks.densityBoost || 0;
-    const calm = hooks.aboutCalm || 0;
-    const downBias = Math.max(inProjects ? 0.18 : 0, (hooks.projectsDrift || 0) * 0.42);
-    const baseAlpha = Math.max(0.08, 1 - calm * 0.55);
-
-    nodes.forEach(n=>{
-      const dx=mouse.x-n.x, dy=mouse.y-n.y;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist > 0.001 && dist<RADIUS){ n.vx-=(dx/dist)*(RADIUS-dist)*0.012; n.vy-=(dy/dist)*(RADIUS-dist)*0.012; }
-      if(dist > 0.001 && dist<REPEL){ n.vx-=(dx/dist)*2.2; n.vy-=(dy/dist)*2.2; }
-      n.vx+=(n.ox-n.x)*0.035; n.vy+=(n.oy-n.y)*0.035;
-      n.vx*=0.78; n.vy*=0.78;
-      n.vx+=(Math.random()-.5)*DRIFT;
-      n.vy+=(Math.random()-.5)*DRIFT + downBias;
-      n.x+=n.vx; n.y+=n.vy;
-    });
-
-    const neighborOffsets = [[1,0],[0,1],[1,1],[-1,1],[2,0],[0,2]];
-    for(let r=0;r<rows;r++){
-      for(let c=0;c<cols;c++){
-        const a=grid[r][c];
-        for(let k=0;k<neighborOffsets.length;k++){
-          const nc=c+neighborOffsets[k][0], nr=r+neighborOffsets[k][1];
-          if(nr<0 || nr>=rows || nc<0 || nc>=cols) continue;
-          const b=grid[nr][nc];
-          const dx=a.x-b.x, dy=a.y-b.y;
-          const d=Math.sqrt(dx*dx+dy*dy);
-          if(d<CONN){
-            const al=(1-d/CONN)*(0.2 + boost * 0.18) * baseAlpha;
-            ctx.beginPath();
-            ctx.strokeStyle=a.plum&&b.plum?`rgba(150,120,180,${al})`:`rgba(212,166,82,${al})`;
-            ctx.lineWidth=.5;
-            ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-          }
-        }
-      }
-    }
-
-    nodes.forEach(n=>{
-      ctx.beginPath();
-      ctx.arc(n.x,n.y,DOT_R+(boost*.4),0,Math.PI*2);
-      ctx.fillStyle=n.plum?`rgba(150,120,180,${(0.22+boost*.42) * baseAlpha})`:`rgba(212,166,82,${(0.22+boost*.42) * baseAlpha})`;
-      ctx.fill();
-    });
-  }
-  resize(); draw();
-})();
 
   /* ── Three.js Helix — Full-Page Drifting ────────────────────── */
 (function(){

@@ -45,7 +45,6 @@ export const markup = `
 </div>
 
 <canvas id="terrain-canvas" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
-<canvas id="hero-canvas"  aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
 <canvas id="helix-canvas" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
 
 <!-- SKIP LINK -->
@@ -101,11 +100,41 @@ export const markup = `
   <div class="hero-vignette" aria-hidden="true"></div>
   <div class="hero-signal-lines" aria-hidden="true">
     <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <polyline points="800,80 870,72 940,88 1010,62 1080,68 1150,52 1220,58 1290,44 1360,50 1440,46" fill="none" stroke="#D4A652" stroke-width="1.2" opacity="0.7"/>
-      <polyline points="800,160 870,152 940,168 1010,142 1080,148 1150,132 1220,140 1290,122 1360,130 1440,126" fill="none" stroke="#D4A652" stroke-width="0.8" opacity="0.45"/>
-      <line x1="1000" y1="0" x2="1000" y2="900" stroke="#D4A652" stroke-width="0.5" opacity="0.15"/>
-      <line x1="1200" y1="0" x2="1200" y2="900" stroke="#D4A652" stroke-width="0.4" opacity="0.1"/>
-      <line x1="0" y1="450" x2="1440" y2="450" stroke="#D4A652" stroke-width="0.5" opacity="0.1"/>
+      <defs>
+        <linearGradient id="signalGold" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#D4A652" stop-opacity="0"/>
+          <stop offset="0.45" stop-color="#D4A652" stop-opacity="0.84"/>
+          <stop offset="1" stop-color="#5EEAD4" stop-opacity="0.22"/>
+        </linearGradient>
+        <radialGradient id="signalNode" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#F4EFE7" stop-opacity="0.9"/>
+          <stop offset="0.46" stop-color="#D4A652" stop-opacity="0.58"/>
+          <stop offset="1" stop-color="#D4A652" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <g class="signal-contours" fill="none" stroke-linecap="round">
+        <path d="M690 132 C810 92 886 128 976 102 C1082 70 1186 86 1320 54" />
+        <path d="M640 230 C760 184 846 224 946 190 C1078 146 1194 172 1376 124" />
+        <path d="M604 342 C742 288 852 340 974 286 C1114 224 1248 270 1448 206" />
+        <path d="M576 478 C726 410 858 492 1012 418 C1172 340 1296 420 1458 352" />
+        <path d="M636 606 C776 548 900 628 1036 560 C1188 484 1308 558 1442 504" />
+        <path d="M762 734 C888 690 1002 742 1126 698 C1240 656 1332 676 1450 640" />
+      </g>
+      <g class="signal-paths" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M742 248 L842 206 L924 238 L1022 180 L1118 206 L1240 150 L1362 178" />
+        <path d="M690 522 L790 484 L884 528 L998 472 L1108 520 L1232 458 L1372 492" />
+        <path d="M852 666 L960 618 L1068 650 L1194 596 L1310 620" />
+      </g>
+      <g class="signal-nodes">
+        <circle cx="742" cy="248" r="5" /><circle cx="842" cy="206" r="3.8" />
+        <circle cx="924" cy="238" r="4.4" /><circle cx="1022" cy="180" r="5.6" />
+        <circle cx="1118" cy="206" r="3.6" /><circle cx="1240" cy="150" r="4.8" />
+        <circle cx="1362" cy="178" r="4" /><circle cx="690" cy="522" r="4.6" />
+        <circle cx="790" cy="484" r="3.4" /><circle cx="884" cy="528" r="5" />
+        <circle cx="998" cy="472" r="3.8" /><circle cx="1108" cy="520" r="5.4" />
+        <circle cx="1232" cy="458" r="4" /><circle cx="1372" cy="492" r="4.8" />
+        <circle cx="960" cy="618" r="3.8" /><circle cx="1194" cy="596" r="4.4" />
+      </g>
     </svg>
   </div>
   <div class="hero-content" id="main-content">
@@ -126,22 +155,24 @@ export const markup = `
     </div>
     <div class="hero-right" aria-hidden="true">
       <div class="hero-stats">
-        <div class="hero-stat">
+        <div class="hero-stat glow-card" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
           <div class="hero-stat-val"><span class="accent" data-count="3">3</span></div>
           <div class="hero-stat-label">Live Projects</div>
         </div>
-        <div class="hero-stat">
+        <div class="hero-stat glow-card" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
           <div class="hero-stat-val"><span data-count="50">50</span><span class="accent">K</span></div>
           <div class="hero-stat-label">Data Points</div>
         </div>
-        <div class="hero-stat">
+        <div class="hero-stat glow-card" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
           <div class="hero-stat-val"><span data-count="100">100</span><span class="accent">%</span></div>
           <div class="hero-stat-label">Automated</div>
         </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val" style="font-size:clamp(1.1rem,2vw,1.6rem);font-weight:600;letter-spacing:0">
-            <span style="color:var(--color-primary)">Real-time</span>
-          </div>
+        <div class="hero-stat glow-card" data-glow data-color="gold">
+          <div class="glow-inner" data-glow></div>
+          <div class="hero-stat-val hero-stat-word"><span>Real-time</span></div>
           <div class="hero-stat-label">Sentiment Feed</div>
         </div>
       </div>
@@ -191,7 +222,7 @@ export const markup = `
     <div class="projects-grid">
 
       <!-- Stock Sentiment -->
-      <a href="#dashboards" class="project-card glow-card reveal reveal-delay-1" data-project-index="0" data-glow data-color="gold" aria-label="Stock Sentiment Analysis — view dashboard">
+      <a href="https://stock-dashboardv2.vercel.app/" class="project-card glow-card reveal reveal-delay-1" data-project-index="0" data-glow data-color="gold" target="_blank" rel="noopener noreferrer" aria-label="Stock Sentiment Analysis — open live dashboard">
         <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" aria-hidden="true">
@@ -207,7 +238,7 @@ export const markup = `
         <h3 class="project-card-title">Stock Sentiment Analysis</h3>
         <p class="project-card-desc">Real-time NLP pipeline that aggregates financial news and social signals to produce sentiment scores for equities. Visualised in an interactive dashboard with trend overlays.</p>
         <div class="project-card-status" aria-hidden="true">
-          <span>Market signal</span><b>Dashboard-linked</b>
+          <span>Market signal</span><b>Live dashboard</b>
         </div>
         <div class="project-telemetry telemetry-market" aria-hidden="true">
           <div class="telemetry-topline"><span>Signal Feed</span><span>+18.4%</span></div>
@@ -222,6 +253,7 @@ export const markup = `
           <span class="chip chip-neutral">Pandas</span>
           <span class="chip chip-neutral">Power BI</span>
         </div>
+        <div class="project-card-cta" aria-hidden="true"><span>Open live dashboard</span></div>
       </a>
 
       <!-- Neural Kitchen -->
@@ -252,6 +284,7 @@ export const markup = `
           <span class="chip chip-neutral">Python</span>
           <span class="chip chip-neutral">API</span>
         </div>
+        <div class="project-card-cta" aria-hidden="true"><span>Launch live app</span></div>
       </a>
 
       <!-- AI Newsletter -->
@@ -285,6 +318,7 @@ export const markup = `
           <span class="chip chip-neutral">Python</span>
           <span class="chip chip-neutral">Scheduling</span>
         </div>
+        <div class="project-card-cta" aria-hidden="true"><span>Read newsletter</span></div>
       </a>
 
     </div>
@@ -318,7 +352,10 @@ export const markup = `
             <div class="embed-shell-dot"></div><div class="embed-shell-dot"></div><div class="embed-shell-dot"></div>
           </div>
           <span class="embed-shell-title">Live Earth Intelligence</span>
-          <div style="display:flex;gap:0.5rem;align-items:center">
+          <div class="embed-shell-status" aria-hidden="true">
+            <span class="data-state is-live"><i></i>ISS</span>
+            <span class="data-state is-live"><i></i>Quakes</span>
+            <span class="data-state is-resolving" id="gc-fire-mode"><i></i>Fires</span>
             <span class="chip chip-gold" style="display:inline-flex;align-items:center;gap:0.35rem">
               <span style="width:6px;height:6px;border-radius:50%;background:#4DAA74;animation:pulse-dot 1.8s infinite;display:inline-block"></span>Live
             </span>
@@ -345,7 +382,13 @@ export const markup = `
                 Updated <span id="gc-updated">--</span>
               </div>
             </div>
-            <div class="g-loading" id="g-loading"><div class="g-spinner"></div><p>Loading globe&hellip;</p></div>
+            <div class="g-loading" id="g-loading">
+              <div class="g-spinner"></div>
+              <p>Loading globe&hellip;</p>
+              <div class="g-loading-steps" aria-hidden="true">
+                <span>Texture</span><span>Telemetry</span><span>Signals</span>
+              </div>
+            </div>
           </div>
           <div class="globe-right">
             <div class="gc">
@@ -373,9 +416,10 @@ export const markup = `
                 <div class="fire-kv"><div class="fire-val" id="gc-fna" style="color:#E8763A">--</div><div class="fire-lbl">N. America</div></div>
                 <div class="fire-kv"><div class="fire-val" id="gc-fsa" style="color:#E8763A">--</div><div class="fire-lbl">S. America</div></div>
                 <div class="fire-kv"><div class="fire-val" id="gc-faf" style="color:#E8763A">--</div><div class="fire-lbl">Africa</div></div>
-                <div class="fire-kv"><div class="fire-val" id="gc-fasia" style="color:#E8763A">--</div><div class="fire-lbl">Asia &amp; Oceania</div></div>
+                <div class="fire-kv"><div class="fire-val" id="gc-fasia" style="color:#E8763A">--</div><div class="fire-lbl">Europe / Asia</div></div>
+                <div class="fire-kv"><div class="fire-val" id="gc-foc" style="color:#E8763A">--</div><div class="fire-lbl">Oceania / Other</div></div>
               </div>
-              <p style="font-size:.6rem;color:#6B6257;margin-top:.5rem;font-family:var(--font-body)">Source: NASA FIRMS VIIRS Global 24h &middot; Top 600 hotspots by brightness</p>
+              <p id="gc-fire-source" style="font-size:.6rem;color:#6B6257;margin-top:.5rem;font-family:var(--font-body)">Source: resolving global wildfire layer</p>
             </div>
           </div>
         </div>
