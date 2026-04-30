@@ -61,27 +61,27 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   }
 
   const mat1 = new THREE.MeshStandardMaterial({
-    color:0xD4A652,
-    emissive:0x4f3208,
-    emissiveIntensity:0.42,
-    metalness:0.92,
-    roughness:0.24,
+    color:0xFFD700,
+    emissive:0x664400,
+    emissiveIntensity:0.5,
+    metalness:1.0,
+    roughness:0.12,
     transparent:true,
-    opacity:.92
+    opacity:.95
   });
   const mat2 = new THREE.MeshStandardMaterial({
-    color:0xF2C96A,
-    emissive:0x3c2a0b,
-    emissiveIntensity:0.32,
-    metalness:0.9,
-    roughness:0.18,
+    color:0xFFC125,
+    emissive:0x553300,
+    emissiveIntensity:0.4,
+    metalness:1.0,
+    roughness:0.10,
     transparent:true,
-    opacity:.76
+    opacity:.85
   });
   const glowMat = new THREE.MeshBasicMaterial({
-    color:0xD4A652,
+    color:0xFFD700,
     transparent:true,
-    opacity:.16,
+    opacity:.20,
     blending:THREE.AdditiveBlending,
     depthWrite:false
   });
@@ -93,13 +93,13 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   const rungGroup = new THREE.Group();
   const RUNGS = TURNS * 6;
   const rungMat = new THREE.MeshStandardMaterial({
-    color:0xF4C86A,
-    emissive:0x302008,
-    emissiveIntensity:0.22,
-    metalness:0.86,
-    roughness:0.28,
+    color:0xFFE066,
+    emissive:0x442200,
+    emissiveIntensity:0.3,
+    metalness:1.0,
+    roughness:0.15,
     transparent:true,
-    opacity:.42
+    opacity:.5
   });
   for(let i=0;i<=RUNGS;i++){
     const t=i/RUNGS, angle=t*TURNS*Math.PI*2, y=(t-.5)*HEIGHT;
