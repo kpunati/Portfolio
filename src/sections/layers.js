@@ -9,16 +9,21 @@ export function initLayers() {
   const hero = document.getElementById('hero');
   let isHovering = false;
   let pressure = 0;
-  let ticking = true;
+  let ticking = false;
+
+  function start() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(frame);
+  }
 
   if (hero) {
-    hero.addEventListener('mouseenter', () => { isHovering = true; });
-    hero.addEventListener('mouseleave', () => { isHovering = false; });
+    hero.addEventListener('mouseenter', () => { isHovering = true; start(); });
+    hero.addEventListener('mouseleave', () => { isHovering = false; start(); });
   }
 
   function frame() {
     if (!ticking) return;
-    requestAnimationFrame(frame);
 
     const heroRect = hero ? hero.getBoundingClientRect() : null;
     const heroVisible = heroRect ? heroRect.bottom > 0 && heroRect.top < window.innerHeight : false;
@@ -38,8 +43,17 @@ export function initLayers() {
     hooks.helixBoost = pressure * 0.8;
 
     root.style.setProperty('--hero-pressure', pressure.toFixed(3));
+
+    if (!isHovering && !heroVisible && pressure === 0) {
+      ticking = false;
+      return;
+    }
+
+    requestAnimationFrame(frame);
   }
 
-  requestAnimationFrame(frame);
+  window.addEventListener('scroll', start, { passive: true });
+  window.addEventListener('resize', start, { passive: true });
+  start();
   window.addEventListener('pagehide', () => { ticking = false; });
 }

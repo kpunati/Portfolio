@@ -45,6 +45,48 @@ export const markup = `
 </div>
 
 <canvas id="terrain-canvas" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+<div class="orbital-field" aria-hidden="true">
+  <div class="orbital-field-core"></div>
+  <div class="orbital-field-glow orbital-field-glow-a"></div>
+  <div class="orbital-field-glow orbital-field-glow-b"></div>
+  <svg class="orbital-field-svg" viewBox="0 0 1440 1024" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="orbitalStroke" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#5EEAD4" stop-opacity="0.05"/>
+        <stop offset="0.42" stop-color="#D4A652" stop-opacity="0.92"/>
+        <stop offset="1" stop-color="#B8A0CC" stop-opacity="0.18"/>
+      </linearGradient>
+      <radialGradient id="orbitalNode" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#F4EFE7" stop-opacity="0.95"/>
+        <stop offset="0.42" stop-color="#D4A652" stop-opacity="0.68"/>
+        <stop offset="1" stop-color="#D4A652" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g class="orbital-rings">
+      <circle class="orbital-ring orbital-ring-a" cx="1060" cy="282" r="192" />
+      <circle class="orbital-ring orbital-ring-b" cx="1088" cy="310" r="318" />
+      <circle class="orbital-ring orbital-ring-c" cx="1120" cy="334" r="468" />
+      <path class="orbital-arc orbital-arc-a" d="M730 236 C870 166 964 170 1086 226 C1188 272 1254 274 1378 220" />
+      <path class="orbital-arc orbital-arc-b" d="M682 520 C840 438 962 458 1084 514 C1208 572 1286 578 1408 506" />
+      <path class="orbital-arc orbital-arc-c" d="M804 710 C942 636 1062 636 1178 688 C1270 728 1328 732 1410 700" />
+      <g class="orbital-nodes">
+        <circle cx="904" cy="214" r="5.2" />
+        <circle cx="985" cy="188" r="3.6" />
+        <circle cx="1096" cy="222" r="4.8" />
+        <circle cx="1186" cy="258" r="3.8" />
+        <circle cx="1258" cy="288" r="5.4" />
+        <circle cx="944" cy="472" r="4.1" />
+        <circle cx="1042" cy="452" r="3.3" />
+        <circle cx="1148" cy="486" r="5.1" />
+        <circle cx="1238" cy="522" r="3.7" />
+        <circle cx="1310" cy="500" r="4.9" />
+        <circle cx="1022" cy="658" r="3.9" />
+        <circle cx="1128" cy="640" r="4.5" />
+        <circle cx="1218" cy="668" r="3.4" />
+      </g>
+    </g>
+  </svg>
+</div>
 <canvas id="helix-canvas" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
 
 <!-- SKIP LINK -->
@@ -484,7 +526,7 @@ export const markup = `
 </section>
 
 <!-- FOOTER -->
-<footer>
+<footer class="site-footer">
   <div class="footer-inner">
     <div>
       <div class="footer-name">Karthik Punati</div>

@@ -10,6 +10,7 @@ export function initMomentum() {
   /* ── Shared scroll state ── */
   var SY = window.scrollY || 0;
   var needsUiUpdate = true;
+  var rafPending = false;
   var rectCache = {};
 
   function updateCache() {
@@ -33,13 +34,17 @@ export function initMomentum() {
   window.addEventListener('scroll', function(){
     SY = window.scrollY;
     needsUiUpdate = true;
+    scheduleUiUpdate();
   }, {passive:true});
 
   var resizeTimeout;
   window.addEventListener('resize', function(){ 
     needsUiUpdate = true; 
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(updateCache, 150);
+    resizeTimeout = setTimeout(function() {
+      updateCache();
+      scheduleUiUpdate();
+    }, 150);
   });
 
   /* ── Helpers ── */
@@ -306,17 +311,21 @@ export function initMomentum() {
   }
 
   /* ────────────────────────────────────────────────────────────
-     2. RAF LOOP
+     2. RAF SCHEDULER
   ──────────────────────────────────────────────────────────── */
-  function loop(){
-    requestAnimationFrame(loop);
-    if(needsUiUpdate) {
-      updateRail();
-      needsUiUpdate = false;
-    }
+  function scheduleUiUpdate() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(function() {
+      rafPending = false;
+      if (needsUiUpdate) {
+        updateRail();
+        needsUiUpdate = false;
+      }
+    });
   }
   updateCache();
-  requestAnimationFrame(loop);
+  scheduleUiUpdate();
 
   /* ── Mobile Nav Drawer ────────────────────────────────────────── */
   const drawer   = document.getElementById('mobile-nav-drawer');
