@@ -1,11 +1,8 @@
-import * as ThreeModule from 'three';
+
 
 export function initGlobe() {
-  var THREE = window.THREE || ThreeModule;
-  if (!THREE) {
-    console.warn('Globe unavailable: Three.js failed to load');
-    var loading = document.getElementById('g-loading');
-    if (loading) loading.classList.add('hidden');
+  if (typeof THREE === 'undefined') {
+    setTimeout(initGlobe, 250);
     return;
   }
 // ── GLOBE DASHBOARD ───────────────────────────────────────────────────────
