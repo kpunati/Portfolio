@@ -13,6 +13,7 @@ export function initGSAPScrollAnimations() {
   const root = document.documentElement;
   const hooks = window._particleHooks = window._particleHooks || {};
   const globeHooks = window._globeHooks = window._globeHooks || {};
+  let dashboardEntered = false;
 
   /* ─────────────────────────────────────────────────────────────────
      1. SECTION PROGRESS → CSS CUSTOM PROPERTIES
@@ -68,7 +69,14 @@ export function initGSAPScrollAnimations() {
         globeWrap.style.transform = `translate3d(0,${lift.toFixed(1)}px,0) scale(${scale.toFixed(3)})`;
       }
       const globeShell = document.getElementById('globe-embed-shell');
-      if (globeShell) globeShell.classList.toggle('is-emerging', p > 0.02 && p < 0.82);
+      if (globeShell) {
+        globeShell.classList.toggle('is-emerging', p > 0.02 && p < 0.82);
+        if (!dashboardEntered && p > 0.18) {
+          dashboardEntered = true;
+          globeShell.classList.add('is-dashboard-ready');
+          document.getElementById('dashboards')?.classList.add('dashboards-entered');
+        }
+      }
     }
   });
 
@@ -139,6 +147,14 @@ function initProjectSidebar() {
   const cards = Array.from(document.querySelectorAll('.project-card'));
   const steps = Array.from(document.querySelectorAll('.project-stage-steps span'));
   const stageCopy = document.querySelector('.project-stage-copy');
+  const projectCount = Math.min(panels.length, cards.length, steps.length);
+  const maxProjectIndex = projectCount - 1;
+  let activeIndex = -1;
+  let scrollIndex = 0;
+  let scrollProgress = 0;
+  let focusOverride = null;
+  let currentSystemY = 0;
+  if (projectCount < 2) return;
 
   function setProjectSystemOffset(index, progress) {
     if (!stageCopy) return;
@@ -147,33 +163,68 @@ function initProjectSidebar() {
       stageCopy.style.transform = '';
       return;
     }
-    const segmentProgress = Math.min(1, Math.max(0, (progress * 3) - index));
-    const targetY = Math.round(index * 92 + segmentProgress * 30);
+    const activeCard = cards[index];
+    const stageRect = stageCopy.getBoundingClientRect();
+    const cardRect = activeCard ? activeCard.getBoundingClientRect() : stageRect;
+    const baseTop = stageRect.top - currentSystemY;
+    const idealTop = cardRect.top + Math.min(54, cardRect.height * 0.14);
+    const cardAlignY = idealTop - baseTop;
+    const progressNudge = Math.min(1, Math.max(0, (progress * projectCount) - index)) * 10;
+    const maxTravel = Math.max(0, window.innerHeight - baseTop - stageCopy.offsetHeight - 34);
+    const targetY = Math.round(Math.max(-12, Math.min(maxTravel, cardAlignY + progressNudge)));
+    currentSystemY = targetY;
     stageCopy.style.setProperty('--system-y', `${targetY}px`);
     stageCopy.style.transform = `translate3d(0, ${targetY}px, 0)`;
   }
 
-  // Stack all panels absolutely inside their wrapper
-  gsap.set(panels, { position: 'absolute', top: 0, left: 0, right: 0, opacity: 0, y: 28 });
-  gsap.set(panels[0], { opacity: 1, y: 0 });
+  function setProjectPanel(index) {
+    panels.forEach((panel, panelIndex) => {
+      const isActive = panelIndex === index;
+      panel.classList.toggle('is-active', isActive);
+      if (isActive) {
+        gsap.to(panel, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.24,
+          ease: 'power2.out',
+          overwrite: true
+        });
+      } else {
+        gsap.set(panel, { autoAlpha: 0, y: 10, overwrite: true });
+      }
+    });
+  }
 
-  // Build a scrubbed timeline: panel 0 → 1 → 2
-  const tl = gsap.timeline({ paused: true });
+  function setProjectActive(index, progress, shouldDispatch = true) {
+    const nextIndex = Math.max(0, Math.min(maxProjectIndex, index));
+    document.documentElement.style.setProperty('--active-project', String(nextIndex));
+    document.documentElement.style.setProperty('--project-local-progress', progress.toFixed(3));
+    setProjectSystemOffset(nextIndex, progress);
+    if (nextIndex === activeIndex) return;
+    activeIndex = nextIndex;
+    setProjectPanel(nextIndex);
+    cards.forEach((card, cardIndex) => {
+      const isActive = cardIndex === nextIndex;
+      card.classList.toggle('is-active', isActive);
+      card.style.setProperty('--card-depth', isActive ? '1' : '0.22');
+    });
+    steps.forEach((step, stepIndex) => {
+      const isActive = stepIndex === nextIndex;
+      step.classList.toggle('is-active', isActive);
+      if (isActive) step.setAttribute('aria-current', 'step');
+      else step.removeAttribute('aria-current');
+    });
+    if (shouldDispatch) {
+      window.dispatchEvent(new CustomEvent('portfolio:project-focus', {
+        detail: { index: nextIndex, progress }
+      }));
+    }
+  }
 
-  // 0 → 1
-  tl.to(panels[0], { opacity: 0, y: -22, duration: 0.38, ease: 'power2.in' }, 0.12)
-    .to(panels[1], { opacity: 1, y: 0,  duration: 0.42, ease: 'power2.out' }, 0.22)
-  // 1 → 2
-    .to(panels[1], { opacity: 0, y: -22, duration: 0.38, ease: 'power2.in' }, 0.62)
-    .to(panels[2], { opacity: 1, y: 0,  duration: 0.42, ease: 'power2.out' }, 0.72);
-
-  ScrollTrigger.create({
-    trigger: '#projects',
-    start: 'top 28%',
-    end: 'bottom 34%',
-    scrub: 1.2,
-    animation: tl
-  });
+  // Stack panels, but show exactly one at a time so project copy cannot overlap.
+  gsap.set(panels, { position: 'absolute', top: 0, left: 0, right: 0, autoAlpha: 0, y: 10 });
+  gsap.set(panels[0], { autoAlpha: 1, y: 0 });
+  setProjectActive(0, 0, false);
 
   // Sidebar offset, active cards, and step indicators in sync with the active card.
   ScrollTrigger.create({
@@ -182,20 +233,29 @@ function initProjectSidebar() {
     end: 'bottom 34%',
     scrub: 0.8,
     onUpdate(self) {
-      const idx = Math.min(Math.floor(self.progress * 3), 2);
-      document.documentElement.style.setProperty('--active-project', String(idx));
-      document.documentElement.style.setProperty('--project-local-progress', self.progress.toFixed(3));
-      setProjectSystemOffset(idx, self.progress);
-      cards.forEach((card, cardIndex) => {
-        card.classList.toggle('is-active', cardIndex === idx);
-      });
-      steps.forEach((step, stepIndex) => {
-        const isActive = stepIndex === idx;
-        step.classList.toggle('is-active', isActive);
-        if (isActive) step.setAttribute('aria-current', 'step');
-        else step.removeAttribute('aria-current');
-      });
+      scrollProgress = self.progress;
+      scrollIndex = Math.min(Math.floor(self.progress * projectCount), maxProjectIndex);
+      if (focusOverride === null) setProjectActive(scrollIndex, scrollProgress);
     }
+  });
+
+  cards.forEach((card, index) => {
+    card.addEventListener('mouseenter', () => {
+      focusOverride = index;
+      setProjectActive(index, scrollProgress);
+    });
+    card.addEventListener('focus', () => {
+      focusOverride = index;
+      setProjectActive(index, scrollProgress);
+    });
+    card.addEventListener('mouseleave', () => {
+      if (focusOverride === index) focusOverride = null;
+      setProjectActive(scrollIndex, scrollProgress);
+    });
+    card.addEventListener('blur', () => {
+      if (focusOverride === index) focusOverride = null;
+      setProjectActive(scrollIndex, scrollProgress);
+    });
   });
 }
 

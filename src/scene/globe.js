@@ -1,11 +1,25 @@
 import * as THREE from 'three';
 
-export function initGlobe() {
+export function initGlobe(options = {}) {
 // ── GLOBE DASHBOARD ───────────────────────────────────────────────────────
 (function() {
+  function showGlobeError(message){
+    var shell=document.getElementById('globe-embed-shell');
+    var loading=document.getElementById('g-loading');
+    if(shell) shell.classList.add('globe-error');
+    if(loading) {
+      loading.classList.add('is-error');
+      var text=loading.querySelector('p');
+      if(text) text.textContent=message||'Globe renderer unavailable.';
+    }
+  }
+  try {
   var GS = {eq:[],fire:[],iss:{lat:0,lon:0,alt:0,vel:0,vis:'daylight'},lastISS:0};
   var FIRE_CACHE_KEY = 'gfire4';
   var GLOBE_R = 1.0;
+  var quality = options.visualQuality || window.__portfolioVisualQuality || 'balanced';
+  var isLite = quality === 'lite';
+  var isBalanced = quality === 'balanced';
   function hideLoader(){
     var loading=document.getElementById('g-loading');
     if(loading) loading.classList.add('hidden');
@@ -103,8 +117,8 @@ export function initGlobe() {
   var wrap   = canvas.parentElement;
   var isMobile = window.innerWidth < 760;
   var globeHooks = window._globeHooks = window._globeHooks || { emerge: 0 };
-  var renderer = new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.25 : 2));
+  var renderer = new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:!isLite, powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile || isLite ? 1 : isBalanced ? 1.25 : 1.5));
   renderer.setClearColor(0x000000,0);
 
   var scene  = new THREE.Scene();
@@ -121,26 +135,27 @@ export function initGlobe() {
   // Earth
   var texLoader = new THREE.TextureLoader();
   var earthTex  = texLoader.load(import.meta.env.BASE_URL + 'earth-texture.jpg',
-    hideLoader,
+    function(){},
     undefined,
-    function(e){ console.warn('Globe texture failed:', e); hideLoader(); }
+    function(e){ console.warn('Globe texture failed:', e); showGlobeError('Globe texture unavailable.'); }
   );
-  earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  earthTex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), isLite ? 2 : 4);
   var earthMat  = new THREE.MeshPhongMaterial({map:earthTex,specular:new THREE.Color(0x1a2233),shininess:4});
-  var earthMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R,64,64),earthMat);
+  var earthMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R,isLite ? 40 : 56,isLite ? 40 : 56),earthMat);
   scene.add(earthMesh);
-  var atmMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R*1.025,32,32),new THREE.MeshBasicMaterial({color:0x6fa8ff,transparent:true,opacity:.15,side:THREE.FrontSide,depthWrite:false}));
+  var atmMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R*1.025,isLite ? 24 : 32,isLite ? 24 : 32),new THREE.MeshBasicMaterial({color:0x6fa8ff,transparent:true,opacity:.15,side:THREE.FrontSide,depthWrite:false}));
   scene.add(atmMesh);
   scene.add(new THREE.AmbientLight(0xffffff,.62));
   var sunLight = new THREE.DirectionalLight(0xfff8f0,0.95); sunLight.position.set(12,6,-8); scene.add(sunLight);
 
   // Earthquake dots
   var MAX_EQ=300, _d=new THREE.Object3D();
-  var eqMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(.012,6,6),new THREE.MeshBasicMaterial({color:0xE040FB,transparent:true,opacity:.95}),MAX_EQ);
+  var eqMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(.012,isLite ? 4 : 6,isLite ? 4 : 6),new THREE.MeshBasicMaterial({color:0xE040FB,transparent:true,opacity:.95}),MAX_EQ);
   eqMesh.count=0; scene.add(eqMesh);
 
   // Fire dots
-  var fireMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(.007,4,4),new THREE.MeshBasicMaterial({color:0xE8763A,transparent:true,opacity:.78}),500);
+  var MAX_FIRE = isLite ? 320 : 500;
+  var fireMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(.007,4,4),new THREE.MeshBasicMaterial({color:0xE8763A,transparent:true,opacity:.78}),MAX_FIRE);
   fireMesh.count=0; scene.add(fireMesh);
 
   // ISS
@@ -179,8 +194,8 @@ export function initGlobe() {
     if(eqMesh.instanceColor) eqMesh.instanceColor.needsUpdate=true;
   }
   function updateFire(){
-    fireMesh.count=Math.min(GS.fire.length,500);
-    GS.fire.slice(0,500).forEach(function(f,i){
+    fireMesh.count=Math.min(GS.fire.length,MAX_FIRE);
+    GS.fire.slice(0,MAX_FIRE).forEach(function(f,i){
       var p=ll2v(f.lat,f.lon,GLOBE_R+.003); _d.position.copy(p); _d.scale.setScalar(1); _d.updateMatrix();
       fireMesh.setMatrixAt(i,_d.matrix);
     });
@@ -201,6 +216,7 @@ export function initGlobe() {
   var globeLeft = canvas.parentElement;
   // Hoist Raycaster — create once, reuse on every mousemove (avoids GC churn)
   var _ray = new THREE.Raycaster();
+  var _pointer = new THREE.Vector2();
   globeLeft.addEventListener('mousedown',function(e){isDrag=true;autoRot=false;prevM={x:e.clientX,y:e.clientY};});
   globeLeft.addEventListener('mousemove',function(e){
     var rect=globeLeft.getBoundingClientRect();
@@ -212,7 +228,7 @@ export function initGlobe() {
       prevM={x:e.clientX,y:e.clientY};
       document.getElementById('g-tooltip').style.display='none'; return;
     }
-    var ray=_ray; ray.setFromCamera(new THREE.Vector2(mx,my),camera);
+    var ray=_ray; _pointer.set(mx,my); ray.setFromCamera(_pointer,camera);
     var hits=ray.intersectObject(eqMesh);
     if(hits.length&&GS.eq[hits[0].instanceId]){
       var q=GS.eq[hits[0].instanceId];
@@ -227,16 +243,21 @@ export function initGlobe() {
   globeLeft.addEventListener('wheel',function(e){camera.position.z=Math.max(1.6,Math.min(5,camera.position.z+e.deltaY*.002));},{passive:true});
 
   // Render loop
-  var issT=0, isVis=true, isInViewport=true;
-  document.addEventListener('visibilitychange',function(){isVis=!document.hidden;});
+  var issT=0, isVis=true, isInViewport=true, hasRendered=false, lastFrame=0;
+  document.addEventListener('visibilitychange',function(){isVis=!document.hidden; updateDataTimers();});
   var observer = new IntersectionObserver(function(entries){
     isInViewport = entries[0].isIntersecting;
+    updateDataTimers();
   }, { threshold: 0.01 });
   observer.observe(canvas);
 
   function loop(){
     requestAnimationFrame(loop);
     if(!isVis || !isInViewport) return;
+    var now=performance.now();
+    var frameBudget=isLite ? 34 : isBalanced ? 24 : 16;
+    if(now-lastFrame<frameBudget) return;
+    lastFrame=now;
     var emerge = Math.max(0, Math.min(1, globeHooks.emerge || 0));
     var stageLift = (1 - emerge) * 0.18;
     earthMesh.position.y = stageLift;
@@ -248,6 +269,12 @@ export function initGlobe() {
     // issLabel auto-rotates as child of earthMesh
     issT+=.04; issRingMat.opacity=.4+Math.sin(issT)*.3; issRingMesh.scale.setScalar(1+Math.sin(issT)*.14);
     renderer.render(scene,camera);
+    if(!hasRendered) {
+      hasRendered=true;
+      hideLoader();
+      var shell=document.getElementById('globe-embed-shell');
+      if(shell) shell.classList.add('globe-rendered');
+    }
   }
   loop();
 
@@ -361,7 +388,28 @@ export function initGlobe() {
     sT('gc-updated',new Date().toLocaleTimeString());
   }
 
-  fetchEQ(); fetchFire(); fetchISS();
-  setInterval(fetchISS,2000); setInterval(fetchEQ,60000); setInterval(fetchFire,300000);
+  var dataTimers=[];
+  function startDataTimers(){
+    if(dataTimers.length) return;
+    fetchEQ(); fetchFire(); fetchISS();
+    dataTimers=[
+      setInterval(fetchISS, isLite ? 5000 : 2500),
+      setInterval(fetchEQ, 90000),
+      setInterval(fetchFire, 420000)
+    ];
+  }
+  function stopDataTimers(){
+    dataTimers.forEach(function(id){ clearInterval(id); });
+    dataTimers=[];
+  }
+  function updateDataTimers(){
+    if(isVis && isInViewport) startDataTimers();
+    else stopDataTimers();
+  }
+  startDataTimers();
+  } catch(error) {
+    console.error('Globe init failed:', error);
+    showGlobeError('Globe renderer unavailable.');
+  }
 })();
 }

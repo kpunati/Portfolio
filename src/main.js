@@ -10,15 +10,49 @@ function whenIdle(callback) {
   window.setTimeout(callback, 180);
 }
 
-function loadGlobeWhenNeeded() {
+function detectVisualQuality(prefersReducedMotion) {
+  if (prefersReducedMotion) return 'lite';
+  const cores = navigator.hardwareConcurrency || 4;
+  const hasMemorySignal = typeof navigator.deviceMemory === 'number';
+  const memory = hasMemorySignal ? navigator.deviceMemory : 8;
+  const dpr = window.devicePixelRatio || 1;
+  const mobile = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+
+  if (mobile || cores <= 4 || (hasMemorySignal && memory <= 4)) return 'lite';
+  if (dpr >= 2.5) return 'balanced';
+  if (cores < 8 || memory < 8 || dpr > 1.75) return 'balanced';
+  return 'full';
+}
+
+function setVisualQuality(quality) {
+  document.documentElement.dataset.visualQuality = quality;
+  document.documentElement.classList.toggle('visual-quality-full', quality === 'full');
+  document.documentElement.classList.toggle('visual-quality-balanced', quality === 'balanced');
+  document.documentElement.classList.toggle('visual-quality-lite', quality === 'lite');
+  window.__portfolioVisualQuality = quality;
+}
+
+function loadGlobeWhenNeeded(options = {}) {
   const dashboards = document.getElementById('dashboards');
   let loaded = false;
 
   const load = async () => {
     if (loaded) return;
     loaded = true;
-    const { initGlobe } = await import('./scene/globe.js');
-    initGlobe();
+    try {
+      const { initGlobe } = await import('./scene/globe.js');
+      initGlobe(options);
+    } catch (error) {
+      console.error('main.js: globe boot failed', error);
+      const shell = document.getElementById('globe-embed-shell');
+      const loading = document.getElementById('g-loading');
+      if (shell) shell.classList.add('globe-error');
+      if (loading) {
+        loading.classList.add('is-error');
+        const text = loading.querySelector('p');
+        if (text) text.textContent = 'Globe renderer unavailable.';
+      }
+    }
   };
 
   if (!dashboards || !('IntersectionObserver' in window)) {
@@ -38,6 +72,8 @@ function loadGlobeWhenNeeded() {
 
 async function bootVisuals() {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const visualQuality = detectVisualQuality(prefersReducedMotion);
+  setVisualQuality(visualQuality);
 
   const [
     { initParticles },
@@ -53,7 +89,7 @@ async function bootVisuals() {
     import('./sections/gsap-scroll.js'),
   ]);
 
-  initParticles({ prefersReducedMotion });
+  initParticles({ prefersReducedMotion, visualQuality });
   initMomentum();
   initLayers();
 
@@ -68,11 +104,11 @@ async function bootVisuals() {
   if (!prefersReducedMotion) {
     whenIdle(async () => {
       const { initDataTerrain } = await import('./scene/dataTerrain.js');
-      initDataTerrain();
+      initDataTerrain({ visualQuality });
     });
   }
 
-  loadGlobeWhenNeeded();
+  loadGlobeWhenNeeded({ visualQuality });
 }
 
 function boot() {

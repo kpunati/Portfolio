@@ -23,8 +23,12 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   if(!canvas) return;
 
   const isMobile = window.innerWidth < 760;
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.2 : 2));
+  const quality = options.visualQuality || window.__portfolioVisualQuality || 'balanced';
+  const isLite = quality === 'lite';
+  const isBalanced = quality === 'balanced';
+  const maxDpr = isLite ? 1 : isBalanced ? 1.25 : 1.55;
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !isLite });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : maxDpr));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace || renderer.outputColorSpace;
 
@@ -50,7 +54,7 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   window.addEventListener('resize', () => { clearTimeout(_helixResizeTimer); _helixResizeTimer = setTimeout(resize, 160); });
   resize();
 
-  const TURNS=5, PPT=42, TOTAL=TURNS*PPT, HEIGHT=8, HRAD=1.35;
+  const TURNS=isLite ? 3 : 5, PPT=isLite ? 26 : isBalanced ? 34 : 42, TOTAL=TURNS*PPT, HEIGHT=8, HRAD=1.35;
   function makeHelixPoints(phase){
     const pts=[];
     for(let i=0;i<=TOTAL;i++){
@@ -86,12 +90,13 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     depthWrite:false
   });
 
-  const helix1 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0)), TOTAL, 0.13, 14, false), mat1);
-  const helix2 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(Math.PI)), TOTAL, 0.095, 14, false), mat2);
-  const helixGlow = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0.18)), TOTAL, 0.19, 10, false), glowMat);
+  const radialSegments = isLite ? 8 : 12;
+  const helix1 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0)), TOTAL, 0.13, radialSegments, false), mat1);
+  const helix2 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(Math.PI)), TOTAL, 0.095, radialSegments, false), mat2);
+  const helixGlow = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0.18)), TOTAL, 0.19, isLite ? 6 : 10, false), glowMat);
 
   const rungGroup = new THREE.Group();
-  const RUNGS = TURNS * 6;
+  const RUNGS = TURNS * (isLite ? 4 : 6);
   const rungMat = new THREE.MeshStandardMaterial({
     color:0xFFE066,
     emissive:0x442200,
@@ -106,25 +111,30 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
     const p1=new THREE.Vector3(Math.cos(angle)*HRAD, y, Math.sin(angle)*HRAD);
     const p2=new THREE.Vector3(Math.cos(angle+Math.PI)*HRAD, y, Math.sin(angle+Math.PI)*HRAD);
     var rc=new THREE.LineCurve3(p1,p2);
-    rungGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rc,1,0.022,6,false),rungMat));
+    rungGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rc,1,0.022,isLite ? 4 : 6,false),rungMat));
   }
 
   const helixGroup = new THREE.Group();
   helixGroup.add(helixGlow, helix1, helix2, rungGroup);
   scene.add(helixGroup);
 
-  let targetRotY=0, currentRotY=0, currentX=0, currentY=0, scrollY=0, isVisible=true;
+  let targetRotY=0, currentRotY=0, currentX=0, currentY=0, scrollY=window.scrollY || 0, isVisible=true, documentVisible=true, lastFrame=0;
 
   const observer = new IntersectionObserver((entries) => {
     isVisible = entries[0].isIntersecting;
   }, { threshold: 0.01 });
   observer.observe(canvas);
+  document.addEventListener('visibilitychange', () => { documentVisible = !document.hidden; });
+  window.addEventListener('scroll', () => { scrollY = window.scrollY || 0; }, { passive: true });
 
   function getPageHeight(){ return document.body.scrollHeight - window.innerHeight; }
 
   function animate(t){
     requestAnimationFrame(animate);
-    if(!isVisible) return;
+    if(!isVisible || !documentVisible) return;
+    const frameBudget = isLite ? 34 : isBalanced ? 24 : 16;
+    if (t - lastFrame < frameBudget) return;
+    lastFrame = t;
     const time = t * .001;
     const pageH = getPageHeight();
     const progress = pageH > 0 ? scrollY / pageH : 0;

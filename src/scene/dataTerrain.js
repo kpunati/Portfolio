@@ -1,8 +1,8 @@
 // src/scene/dataTerrain.js - persistent procedural portfolio background
 
-export function initDataTerrain() {
+export function initDataTerrain(options = {}) {
   if (typeof THREE === 'undefined') {
-    setTimeout(initDataTerrain, 250);
+    setTimeout(() => initDataTerrain(options), 250);
     return;
   }
 
@@ -11,12 +11,15 @@ export function initDataTerrain() {
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isMobile = window.innerWidth < 760;
-  const DPR = Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 1.8);
+  const quality = options.visualQuality || window.__portfolioVisualQuality || 'balanced';
+  const isLite = quality === 'lite';
+  const isBalanced = quality === 'balanced';
+  const DPR = Math.min(window.devicePixelRatio || 1, isMobile || isLite ? 1 : isBalanced ? 1.25 : 1.5);
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
-    antialias: !isMobile,   // MSAA disabled on mobile — halves GPU work, no visible diff on point cloud
+    antialias: !isMobile && !isLite,
     powerPreference: 'high-performance'
   });
   renderer.setPixelRatio(DPR);
@@ -79,7 +82,11 @@ export function initDataTerrain() {
     state.mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
   }, { passive: true });
 
-  document.querySelectorAll('.project-card').forEach((card, index) => {
+  const projectCards = Array.from(document.querySelectorAll('.project-card'));
+  const maxProjectIndex = Math.max(0, projectCards.length - 1);
+  const projectCenterIndex = maxProjectIndex / 2;
+
+  projectCards.forEach((card, index) => {
     card.addEventListener('mouseenter', () => { state.targetFocusProject = index; });
     card.addEventListener('mouseleave', () => { state.targetFocusProject = -1; });
     card.addEventListener('focus', () => { state.targetFocusProject = index; });
@@ -115,8 +122,8 @@ export function initDataTerrain() {
     uAbout: { value: 0 }
   };
 
-  const cols = isMobile ? 82 : 132;
-  const rows = isMobile ? 48 : 78;
+  const cols = isMobile || isLite ? 72 : isBalanced ? 104 : 132;
+  const rows = isMobile || isLite ? 42 : isBalanced ? 62 : 78;
   const width = isMobile ? 28 : 38;
   const depth = isMobile ? 28 : 38;
   const positions = new Float32Array(cols * rows * 3);
@@ -238,7 +245,7 @@ export function initDataTerrain() {
   }
 
   const contours = [];
-  for (let i = 0; i < (isMobile ? 9 : 15); i++) {
+  for (let i = 0; i < (isMobile || isLite ? 8 : isBalanced ? 11 : 15); i++) {
     const zBase = 7 - i * 2.1;
     const line = makeContourLine(zBase, width, i * 0.7, contourMaterial);
     contours.push(line);
@@ -267,7 +274,7 @@ export function initDataTerrain() {
   gridGroup.add(new THREE.LineSegments(gridGeometry, gridMaterial));
   scene.add(gridGroup);
 
-  const starCount = isMobile ? 420 : 900;
+  const starCount = isMobile || isLite ? 320 : isBalanced ? 620 : 900;
   const starPositions = new Float32Array(starCount * 3);
   for (let i = 0; i < starCount; i++) {
     const i3 = i * 3;
@@ -348,7 +355,7 @@ export function initDataTerrain() {
   });
   const signalNodes = [];
   const signalLinePoints = [];
-  const signalCount = isMobile ? 12 : 22;
+  const signalCount = isMobile || isLite ? 10 : isBalanced ? 16 : 22;
   for (let i = 0; i < signalCount; i++) {
     const angle = (i / signalCount) * Math.PI * 2;
     const radius = 2.4 + (i % 5) * 0.46;
@@ -744,6 +751,7 @@ export function initDataTerrain() {
   let visible = true;
   let isInViewport = true;
   let contourFrame = 0;
+  let lastFrame = 0;
   document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
   const observer = new IntersectionObserver((entries) => {
     isInViewport = entries[0].isIntersecting;
@@ -753,6 +761,10 @@ export function initDataTerrain() {
   function animate() {
     requestAnimationFrame(animate);
     if (!visible || !isInViewport) return;
+    const now = performance.now();
+    const frameBudget = isLite ? 34 : isBalanced ? 24 : 16;
+    if (now - lastFrame < frameBudget) return;
+    lastFrame = now;
 
     const elapsed = clock.getElapsedTime();
     const time = prefersReducedMotion ? 0 : elapsed;
@@ -765,10 +777,10 @@ export function initDataTerrain() {
     state.scan = lerp(state.scan, scanTarget, 0.065);
     state.globe = lerp(state.globe, sectionProgress('dashboards', 0.9, 0.18), 0.06);
     state.about = lerp(state.about, sectionProgress('about', 0.9, 0.18), 0.06);
-    const fallbackProject = clamp(Math.floor((state.projectProgress || state.projects) * 3.05), 0, 2);
+    const fallbackProject = clamp(Math.floor((state.projectProgress || state.projects) * (maxProjectIndex + 1.05)), 0, maxProjectIndex);
     const targetActiveProject = state.targetFocusProject >= 0 ? state.targetFocusProject : fallbackProject;
     state.activeProject = lerp(state.activeProject, targetActiveProject, 0.08);
-    const activeProjectIndex = Math.round(clamp(state.activeProject, 0, 2));
+    const activeProjectIndex = Math.round(clamp(state.activeProject, 0, maxProjectIndex));
 
     const intensity = 0.82 + state.hero * 0.18 + state.projects * 0.16 - state.about * 0.38;
     terrainUniforms.uTime.value = time;
@@ -844,7 +856,8 @@ export function initDataTerrain() {
     contourGroup.position.z = terrain.position.z;
     contourGroup.rotation.y = terrain.rotation.y;
     contourMaterial.opacity = 0.18 + state.hero * 0.18 + state.projects * 0.30 + state.scan * 0.14 + state.globe * 0.06 - state.about * 0.18;
-    if (contourFrame % 2 === 0) {
+    const contourCadence = isLite ? 5 : isBalanced ? 3 : 2;
+    if (contourFrame % contourCadence === 0) {
       contours.forEach((line, lineIndex) => {
         const attr = line.geometry.getAttribute('position');
         const phase = line.userData.phase + time * 0.34;
@@ -903,7 +916,7 @@ export function initDataTerrain() {
 
     scanMaterial.opacity = Math.max(0, state.projects * 0.5 + state.scan * 0.16 - state.globe * 0.34 - state.about * 0.2);
     scanGroup.position.set(
-      lerp(scanGroup.position.x, (activeProjectIndex - 1) * 2.2 + state.mouseX * 0.2, 0.055),
+      lerp(scanGroup.position.x, (activeProjectIndex - projectCenterIndex) * 2.2 + state.mouseX * 0.2, 0.055),
       lerp(scanGroup.position.y, 0.92 + state.projects * 0.62, 0.055),
       lerp(scanGroup.position.z, -7.9 - state.globe * 1.2, 0.055)
     );
@@ -951,7 +964,7 @@ export function initDataTerrain() {
 
     glowMaterial.opacity = 0.035 + state.projects * 0.04 + state.scan * 0.045 + state.globe * 0.03 - state.about * 0.03;
 
-    const projectX = (state.activeProject - 1) * 1.35;
+    const projectX = (state.activeProject - projectCenterIndex) * 1.35;
     const heroWeight = Math.max(0, 1 - state.projects * 0.9);
     const projectWeight = state.projects * (1 - state.scan * 0.45) * (1 - state.globe * 0.62);
     const scanWeight = state.scan * (1 - state.globe * 0.45);

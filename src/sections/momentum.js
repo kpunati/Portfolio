@@ -21,14 +21,6 @@ export function initMomentum() {
         rectCache[id] = { top: rect.top + SY, height: rect.height };
       }
     });
-    projectCards.forEach(function(card, i) {
-      var rect = card.getBoundingClientRect();
-      rectCache['card-' + i] = { top: rect.top + SY, height: rect.height };
-    });
-    if(projectsSection) {
-      var rect = projectsSection.getBoundingClientRect();
-      rectCache['projects-section'] = { top: rect.top + SY, height: rect.height };
-    }
   }
 
   window.addEventListener('scroll', function(){
@@ -51,7 +43,6 @@ export function initMomentum() {
   function sectionTop(id){
     return rectCache[id] ? rectCache[id].top : 0;
   }
-  function lerp(a,b,t){return a+(b-a)*t;}
   function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
 
   /* ────────────────────────────────────────────────────────────
@@ -89,88 +80,7 @@ export function initMomentum() {
     });
   });
 
-  var projectCards = Array.prototype.slice.call(document.querySelectorAll('.project-card'));
-  var projectSteps = Array.prototype.slice.call(document.querySelectorAll('.project-stage-steps span'));
-  var projectStageCopy = document.querySelector('.project-stage-copy');
-  var projectsSection = document.getElementById('projects');
-  var activeProjectIndex = -1;
-  var projectProgress = 0;
-
-  function updateProjectSystemOffset(index) {
-    if(!projectStageCopy || index < 0) return;
-    if(window.innerWidth <= 900) {
-      projectStageCopy.style.setProperty('--system-y', '0px');
-      projectStageCopy.style.transform = '';
-      return;
-    }
-    var segmentProgress = clamp((projectProgress * projectCards.length) - index, 0, 1);
-    var targetY = Math.round(index * 92 + segmentProgress * 30);
-    projectStageCopy.style.setProperty('--system-y', targetY + 'px');
-    projectStageCopy.style.transform = 'translate3d(0, ' + targetY + 'px, 0)';
-  }
-
-  function setActiveProject(index) {
-    if(index === activeProjectIndex) return;
-    activeProjectIndex = index;
-    projectCards.forEach(function(card, cardIndex){
-      if(cardIndex === index) card.classList.add('is-active');
-      else card.classList.remove('is-active');
-    });
-    projectSteps.forEach(function(step, stepIndex){
-      if(stepIndex === index) {
-        step.classList.add('is-active');
-        step.setAttribute('aria-current', 'step');
-      } else {
-        step.classList.remove('is-active');
-        step.removeAttribute('aria-current');
-      }
-    });
-    document.documentElement.style.setProperty('--active-project', String(Math.max(0, index)));
-    updateProjectSystemOffset(index);
-    window.dispatchEvent(new CustomEvent('portfolio:project-focus', {
-      detail: { index: index, progress: projectProgress }
-    }));
-  }
-
-  function updateProjectProgress() {
-    var cached = rectCache['projects-section'];
-    if(!cached) return;
-    var top = cached.top - SY;
-    var travel = Math.max(1, cached.height - window.innerHeight);
-    projectProgress = clamp(-top / travel, 0, 1);
-    document.documentElement.style.setProperty('--project-local-progress', projectProgress.toFixed(3));
-    updateProjectSystemOffset(activeProjectIndex);
-  }
-
-  function updateProjectFocus() {
-    if(!projectCards.length) return;
-    updateProjectProgress();
-    var viewportCenter = window.innerHeight * 0.5;
-    var progressIndex = clamp(Math.floor(projectProgress * projectCards.length), 0, projectCards.length - 1);
-    var bestIndex = -1;
-    var bestDistance = Infinity;
-    projectCards.forEach(function(card, index){
-      var cached = rectCache['card-' + index];
-      if(!cached) return;
-      var top = cached.top - SY;
-      var bottom = top + cached.height;
-      if(bottom < 120 || top > window.innerHeight - 80) return;
-      var center = top + cached.height * 0.5;
-      var distance = Math.abs(center - viewportCenter);
-      var visible = clamp((Math.min(bottom, window.innerHeight) - Math.max(top, 0)) / Math.max(1, cached.height), 0, 1);
-      var depth = clamp(1 - distance / Math.max(1, window.innerHeight * 0.62), 0, 1);
-      card.style.setProperty('--card-depth', depth.toFixed(3));
-      card.style.setProperty('--card-visible', visible.toFixed(3));
-      if(distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
-      }
-    });
-    if(bestIndex < 0) bestIndex = progressIndex;
-    setActiveProject(bestIndex);
-  }
-
-  projectCards.forEach(function(card, index){
+  Array.prototype.slice.call(document.querySelectorAll('.project-card')).forEach(function(card){
     card.addEventListener('mousemove', function(event){
       var rect = card.getBoundingClientRect();
       var x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
@@ -178,13 +88,9 @@ export function initMomentum() {
       card.style.setProperty('--tilt-x', (-y * 4.5).toFixed(2) + 'deg');
       card.style.setProperty('--tilt-y', (x * 5.5).toFixed(2) + 'deg');
     });
-    card.addEventListener('mouseenter', function(){ setActiveProject(index); });
-    card.addEventListener('focus', function(){ setActiveProject(index); });
     card.addEventListener('mouseleave', function(){
       card.style.setProperty('--tilt-x', '0deg');
       card.style.setProperty('--tilt-y', '0deg');
-      updateProjectFocus();
-      needsUiUpdate = true;
     });
   });
 
@@ -307,7 +213,6 @@ export function initMomentum() {
       var pageHeight = Math.max(1, document.body.scrollHeight - VH);
       commandProgress.style.width = (clamp(SY / pageHeight, 0, 1) * 100).toFixed(1) + '%';
     }
-    updateProjectFocus();
   }
 
   /* ────────────────────────────────────────────────────────────
