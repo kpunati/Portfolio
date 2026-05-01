@@ -1,15 +1,25 @@
-
+import * as THREE from 'three';
 
 export function initGlobe() {
-  if (typeof THREE === 'undefined') {
-    setTimeout(initGlobe, 250);
-    return;
-  }
 // ── GLOBE DASHBOARD ───────────────────────────────────────────────────────
 (function() {
   var GS = {eq:[],fire:[],iss:{lat:0,lon:0,alt:0,vel:0,vis:'daylight'},lastISS:0};
   var FIRE_CACHE_KEY = 'gfire4';
   var GLOBE_R = 1.0;
+  function hideLoader(){
+    var loading=document.getElementById('g-loading');
+    if(loading) loading.classList.add('hidden');
+  }
+  function readCache(key){
+    try {
+      var cached=localStorage.getItem(key);
+      return cached ? JSON.parse(cached) : null;
+    } catch(e) {
+      console.warn('Globe cache invalid:', key, e);
+      localStorage.removeItem(key);
+      return null;
+    }
+  }
   function mC(m){return m<2.5?'#C084FC':m<4?'#E040FB':m<6?'#F000FF':'#FF00CC';}
   function mB(m){return m<2.5?'rgba(192,132,252,.15)':m<4?'rgba(224,64,251,.15)':m<6?'rgba(240,0,255,.15)':'rgba(255,0,204,.15)';}
   function sT(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
@@ -111,9 +121,9 @@ export function initGlobe() {
   // Earth
   var texLoader = new THREE.TextureLoader();
   var earthTex  = texLoader.load(import.meta.env.BASE_URL + 'earth-texture.jpg',
-    function(){ var loading=document.getElementById('g-loading'); if(loading) loading.classList.add('hidden'); },
+    hideLoader,
     undefined,
-    function(e){ console.warn('Globe texture failed:', e); var loading=document.getElementById('g-loading'); if(loading) loading.classList.add('hidden'); }
+    function(e){ console.warn('Globe texture failed:', e); hideLoader(); }
   );
   earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   var earthMat  = new THREE.MeshPhongMaterial({map:earthTex,specular:new THREE.Color(0x1a2233),shininess:4});
@@ -243,8 +253,8 @@ export function initGlobe() {
 
   // Data
   function fetchEQ(){
-    var cached=localStorage.getItem('geq');
-    if(cached){var d=JSON.parse(cached);if(Date.now()-d.ts<60000){GS.eq=d.data;renderEQUI();updateEQ();return;}}
+    var d=readCache('geq');
+    if(d&&Date.now()-d.ts<60000){GS.eq=d.data;renderEQUI();updateEQ();return;}
     fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson')
     .then(function(r){return r.json();})
     .then(function(j){
@@ -265,9 +275,8 @@ export function initGlobe() {
     sT('gc-updated',new Date().toLocaleTimeString());
   }
   function fetchFire(){
-    var cached=localStorage.getItem(FIRE_CACHE_KEY);
-    if(cached){
-      var d=JSON.parse(cached);
+    var d=readCache(FIRE_CACHE_KEY);
+    if(d){
       if(Date.now()-d.ts<21600000 && d.data && d.data.length && fireSpread(d.data)>1){
         GS.fire=d.data;setFireSource(d.source||'Source: NASA fire data',d.mode);renderFireUI();updateFire();return;
       }
