@@ -146,15 +146,24 @@ This is how the portfolio can reach Lando-style complexity without every layer f
 
 For example:
 
-- Terrain can render at 30 FPS in hero/projects.
-- Terrain can drop to 12-15 FPS near the globe.
-- Terrain can freeze to its last rendered frame when the globe is active.
+- Terrain should keep smooth perceived motion in hero/projects.
+- Terrain should reduce CPU work, not visible smoothness.
+- Terrain can freeze or become nearly static only when the globe or a future dashboard is visually dominant.
 - Globe gets priority while interacted with.
 - Helix should not render while it is offscreen or visually hidden.
 
 ## Phase 5: Terrain Refactor
 
 The terrain is probably the biggest runtime cost.
+
+The terrain direction should be GPU-first, not low-FPS-first. The goal is to preserve the cinematic data-terrain / atmospheric depth feeling while moving expensive work out of JavaScript and into shader uniforms. Do not intentionally make the hero/projects background visibly low-FPS; that would solve cost by reducing polish, which is not the desired tradeoff.
+
+Preferred terrain model:
+
+1. Keep perceived motion smooth at normal viewport focus.
+2. Animate large background forms through shader time uniforms, transform, and opacity.
+3. Avoid CPU-side geometry mutation for continuous motion.
+4. Use frozen or reduced terrain only when another dashboard is the primary visual target.
 
 Specific changes:
 
@@ -163,12 +172,22 @@ Specific changes:
 3. Move more animation into shader uniforms instead of CPU-side geometry updates.
 4. Use fewer separate material opacity updates per frame.
 5. Add hard quality tiers:
-   - `full`: current visual density, capped DPR 1.5.
-   - `balanced`: fewer contours, lower point count, 30 FPS.
-   - `lite`: no contour mutation, low point count, 20-24 FPS.
+   - `full`: current visual density, capped DPR 1.5, smooth shader-driven motion.
+   - `balanced`: fewer contours and lower point count, but still smooth shader-driven motion.
+   - `lite`: no CPU contour mutation, low point count, reduced detail but not intentionally choppy.
 6. Freeze terrain during globe focus.
 
 The terrain should become a background atmosphere, not a competing dashboard renderer.
+
+Terrain alternatives considered:
+
+- Shader-only atmospheric field: best long-term direction if the current depth can be matched closely enough.
+- Pre-rendered terrain loop plus interactive overlay: biggest FPS win, but less live and less flexible.
+- Canvas 2D data field: efficient, but less spatial unless heavily styled.
+- SVG/CSS topographic layers: sharp and cheap, but less fluid.
+- Hybrid current-scene plus shader-driven motion: safest first step because it preserves the current look while removing the worst CPU work.
+
+Recommended approach: use the hybrid path first, then progressively replace CPU-mutated terrain details with shader-driven equivalents. This avoids flattening the design while still moving toward the Lando-style model of visually complex but strategically scheduled motion.
 
 ## Phase 6: Globe Refactor
 

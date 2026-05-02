@@ -1,11 +1,9 @@
 // src/scene/dataTerrain.js - persistent procedural portfolio background
 
-export function initDataTerrain(options = {}) {
-  if (typeof THREE === 'undefined') {
-    setTimeout(() => initDataTerrain(options), 250);
-    return;
-  }
+import * as THREE from 'three';
+import { visualScheduler } from '../performance/visualScheduler.js';
 
+export function initDataTerrain(options = {}) {
   const canvas = document.getElementById('terrain-canvas');
   if (!canvas) return;
 
@@ -80,6 +78,7 @@ export function initDataTerrain(options = {}) {
   window.addEventListener('mousemove', (event) => {
     state.mouseX = (event.clientX / window.innerWidth - 0.5) * 2;
     state.mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
+    visualScheduler.setPointer(state.mouseX, state.mouseY);
   }, { passive: true });
 
   const projectCards = Array.from(document.querySelectorAll('.project-card'));
@@ -748,39 +747,36 @@ export function initDataTerrain(options = {}) {
   glowPlane.rotation.x = -Math.PI / 2;
   scene.add(glowPlane);
 
-  let visible = true;
   let isInViewport = true;
   let contourFrame = 0;
-  let lastFrame = 0;
-  document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
   const observer = new IntersectionObserver((entries) => {
     isInViewport = entries[0].isIntersecting;
   }, { threshold: 0.001 });
   observer.observe(canvas);
 
-  function animate() {
-    requestAnimationFrame(animate);
-    if (!visible || !isInViewport) return;
-    const now = performance.now();
-    const frameBudget = isLite ? 34 : isBalanced ? 24 : 16;
-    if (now - lastFrame < frameBudget) return;
-    lastFrame = now;
-
+  function updateTerrain(schedulerState) {
     const elapsed = clock.getElapsedTime();
     const time = prefersReducedMotion ? 0 : elapsed;
     contourFrame += 1;
+    state.targetScroll = schedulerState.scrollProgress;
+    state.mouseX = schedulerState.pointer.x;
+    state.mouseY = schedulerState.pointer.y;
     state.scroll = lerp(state.scroll, state.targetScroll, 0.06);
     state.focusProject = lerp(state.focusProject, state.targetFocusProject, 0.12);
-    state.hero = lerp(state.hero, 1 - sectionProgress('projects', 0.98, 0.76), 0.05);
-    state.projects = lerp(state.projects, sectionProgress('projects', 0.9, 0.1), 0.05);
-    const scanTarget = sectionProgress('dashboards', 1.18, 0.54) * (1 - sectionProgress('dashboards', 0.72, 0.18) * 0.78);
+    state.projects = lerp(state.projects, schedulerState.sections.projects || sectionProgress('projects', 0.9, 0.1), 0.05);
+    state.hero = lerp(state.hero, Math.max(0, 1 - state.projects), 0.05);
+    const scanTarget = schedulerState.sections.scan || (sectionProgress('dashboards', 1.18, 0.54) * (1 - sectionProgress('dashboards', 0.72, 0.18) * 0.78));
     state.scan = lerp(state.scan, scanTarget, 0.065);
-    state.globe = lerp(state.globe, sectionProgress('dashboards', 0.9, 0.18), 0.06);
-    state.about = lerp(state.about, sectionProgress('about', 0.9, 0.18), 0.06);
+    state.globe = lerp(state.globe, schedulerState.sections.globe || sectionProgress('dashboards', 0.9, 0.18), 0.06);
+    state.about = lerp(state.about, schedulerState.sections.about || sectionProgress('about', 0.9, 0.18), 0.06);
     const fallbackProject = clamp(Math.floor((state.projectProgress || state.projects) * (maxProjectIndex + 1.05)), 0, maxProjectIndex);
     const targetActiveProject = state.targetFocusProject >= 0 ? state.targetFocusProject : fallbackProject;
     state.activeProject = lerp(state.activeProject, targetActiveProject, 0.08);
     const activeProjectIndex = Math.round(clamp(state.activeProject, 0, maxProjectIndex));
+    const terrainMode = state.globe > 0.35 || state.about > 0.22 ? 'frozen' : state.scan > 0.12 || state.globe > 0.12 ? 'balanced' : 'full';
+    const allowHeroObjects = terrainMode === 'full' && state.hero > 0.08;
+    const allowProjectObjects = terrainMode !== 'frozen' && state.projects > 0.05;
+    const allowCpuGeometry = terrainMode === 'full' && !isLite;
 
     const intensity = 0.82 + state.hero * 0.18 + state.projects * 0.16 - state.about * 0.38;
     terrainUniforms.uTime.value = time;
@@ -799,10 +795,12 @@ export function initDataTerrain(options = {}) {
     chamberGroup.position.x = lerp(chamberGroup.position.x, state.mouseX * -0.25, 0.04);
     chamberGroup.position.y = lerp(chamberGroup.position.y, state.mouseY * -0.12 + state.projects * -0.42, 0.04);
     chamberGroup.position.z = lerp(chamberGroup.position.z, state.scroll * 5.8 - state.projects * 2.0, 0.04);
-    chamberGroup.children.forEach((ring, index) => {
-      ring.rotation.z = time * (0.018 + index * 0.002) + ring.userData.phase;
-      ring.scale.setScalar(1 + Math.sin(time * 0.42 + index) * 0.018 + state.hero * 0.035);
-    });
+    if (allowHeroObjects) {
+      chamberGroup.children.forEach((ring, index) => {
+        ring.rotation.z = time * (0.018 + index * 0.002) + ring.userData.phase;
+        ring.scale.setScalar(1 + Math.sin(time * 0.42 + index) * 0.018 + state.hero * 0.035);
+      });
+    }
 
     heroNodeMaterial.opacity = Math.max(0, 0.12 + state.hero * 0.78 - state.projects * 0.18 - state.globe * 0.24 - state.about * 0.12);
     heroCyanMaterial.opacity = Math.max(0, 0.10 + state.hero * 0.70 + state.projects * 0.08 - state.globe * 0.22 - state.about * 0.12);
@@ -812,16 +810,18 @@ export function initDataTerrain(options = {}) {
     heroConstellationGroup.position.y = lerp(heroConstellationGroup.position.y, state.mouseY * -0.12 + state.hero * 0.16 - state.projects * 0.2, 0.04);
     heroConstellationGroup.position.z = lerp(heroConstellationGroup.position.z, state.scroll * 3.8 + state.scan * -1.2, 0.04);
     heroConstellationGroup.rotation.y = lerp(heroConstellationGroup.rotation.y, state.mouseX * 0.045 + state.projects * -0.08, 0.04);
-    heroSignalNodes.forEach((node, index) => {
-      const base = node.userData.base;
-      const pulse = 1 + Math.sin(time * 1.8 + base.phase) * 0.32 + state.hero * 0.18;
-      node.position.set(
-        base.x + Math.sin(time * 0.42 + index) * 0.04,
-        base.y + Math.cos(time * 0.36 + index) * 0.06,
-        base.z + Math.sin(time * 0.24 + index) * 0.05
-      );
-      node.scale.setScalar(pulse);
-    });
+    if (allowHeroObjects) {
+      heroSignalNodes.forEach((node, index) => {
+        const base = node.userData.base;
+        const pulse = 1 + Math.sin(time * 1.8 + base.phase) * 0.32 + state.hero * 0.18;
+        node.position.set(
+          base.x + Math.sin(time * 0.42 + index) * 0.04,
+          base.y + Math.cos(time * 0.36 + index) * 0.06,
+          base.z + Math.sin(time * 0.24 + index) * 0.05
+        );
+        node.scale.setScalar(pulse);
+      });
+    }
 
     signalGroup.position.x = lerp(signalGroup.position.x, 2.8 + state.mouseX * -0.42 - state.projects * 1.4, 0.04);
     signalGroup.position.y = lerp(signalGroup.position.y, 0.15 + state.mouseY * -0.24 + state.hero * 0.24 - state.projects * 0.7, 0.04);
@@ -829,25 +829,27 @@ export function initDataTerrain(options = {}) {
     signalNodeMaterial.opacity = 0.08 + state.hero * 0.58 - state.projects * 0.34 - state.about * 0.12;
     signalGoldMaterial.opacity = 0.08 + state.hero * 0.46 + state.projects * 0.08 - state.about * 0.12;
     signalLineMaterial.opacity = 0.03 + state.hero * 0.24 - state.projects * 0.1;
-    const signalAttr = signalLines.geometry.getAttribute('position');
-    let signalPtr = 0;
-    signalNodes.forEach((node, index) => {
-      const data = node.userData;
-      const drift = time * (0.16 + index * 0.001);
-      node.position.set(
-        Math.cos(data.angle + drift) * data.radius,
-        data.height + Math.sin(time * 0.8 + data.phase) * 0.16,
-        Math.sin(data.angle + drift) * (data.radius * 0.42)
-      );
-      node.scale.setScalar(1 + Math.sin(time * 2.2 + data.phase) * 0.32 + state.hero * 0.5);
-      if (index > 0 && index % 2 === 0 && signalPtr + 5 < signalAttr.array.length) {
-        const prev = signalNodes[index - 1].position;
-        signalAttr.setXYZ(signalPtr / 3, prev.x, prev.y, prev.z);
-        signalAttr.setXYZ(signalPtr / 3 + 1, node.position.x, node.position.y, node.position.z);
-        signalPtr += 6;
-      }
-    });
-    signalAttr.needsUpdate = true;
+    if (allowHeroObjects) {
+      const signalAttr = signalLines.geometry.getAttribute('position');
+      let signalPtr = 0;
+      signalNodes.forEach((node, index) => {
+        const data = node.userData;
+        const drift = time * (0.16 + index * 0.001);
+        node.position.set(
+          Math.cos(data.angle + drift) * data.radius,
+          data.height + Math.sin(time * 0.8 + data.phase) * 0.16,
+          Math.sin(data.angle + drift) * (data.radius * 0.42)
+        );
+        node.scale.setScalar(1 + Math.sin(time * 2.2 + data.phase) * 0.32 + state.hero * 0.5);
+        if (index > 0 && index % 2 === 0 && signalPtr + 5 < signalAttr.array.length) {
+          const prev = signalNodes[index - 1].position;
+          signalAttr.setXYZ(signalPtr / 3, prev.x, prev.y, prev.z);
+          signalAttr.setXYZ(signalPtr / 3 + 1, node.position.x, node.position.y, node.position.z);
+          signalPtr += 6;
+        }
+      });
+      signalAttr.needsUpdate = true;
+    }
 
     terrain.rotation.y = lerp(terrain.rotation.y, state.mouseX * 0.018 + state.scan * 0.045 + state.globe * 0.025, 0.04);
     terrain.position.x = lerp(terrain.position.x, state.mouseX * -0.35, 0.04);
@@ -856,8 +858,8 @@ export function initDataTerrain(options = {}) {
     contourGroup.position.z = terrain.position.z;
     contourGroup.rotation.y = terrain.rotation.y;
     contourMaterial.opacity = 0.18 + state.hero * 0.18 + state.projects * 0.30 + state.scan * 0.14 + state.globe * 0.06 - state.about * 0.18;
-    const contourCadence = isLite ? 5 : isBalanced ? 3 : 2;
-    if (contourFrame % contourCadence === 0) {
+    const contourCadence = isBalanced ? 4 : 2;
+    if (allowCpuGeometry && contourFrame % contourCadence === 0) {
       contours.forEach((line, lineIndex) => {
         const attr = line.geometry.getAttribute('position');
         const phase = line.userData.phase + time * 0.34;
@@ -878,13 +880,15 @@ export function initDataTerrain(options = {}) {
     panelMaterials.forEach((mat, index) => {
       mat.opacity = (index === 0 ? 0.22 : 0.14) + state.projects * 0.22 + state.scan * 0.12 + state.globe * 0.06 - state.about * 0.16;
     });
-    panels.forEach((panel) => {
-      const base = panel.userData.base;
-      panel.position.y = base.y + Math.sin(time * 0.7 + base.phase) * 0.16 + state.projects * 0.35;
-      panel.position.z = base.z + Math.sin(time * 0.42 + base.phase) * 0.18 - state.scan * 1.4 + state.globe * 2.0;
-      panel.rotation.x = base.rx + Math.sin(time * 0.36 + base.phase) * 0.025;
-      panel.rotation.y = base.ry + state.mouseX * 0.025;
-    });
+    if (allowProjectObjects) {
+      panels.forEach((panel) => {
+        const base = panel.userData.base;
+        panel.position.y = base.y + Math.sin(time * 0.7 + base.phase) * 0.16 + state.projects * 0.35;
+        panel.position.z = base.z + Math.sin(time * 0.42 + base.phase) * 0.18 - state.scan * 1.4 + state.globe * 2.0;
+        panel.rotation.x = base.rx + Math.sin(time * 0.36 + base.phase) * 0.025;
+        panel.rotation.y = base.ry + state.mouseX * 0.025;
+      });
+    }
 
     const artifactOpacity = Math.max(0, state.projects * 1.18 + state.scan * 0.22 - state.globe * 0.52 - state.about * 0.3);
     artifactMaterials.forEach((material, index) => {
@@ -893,26 +897,28 @@ export function initDataTerrain(options = {}) {
     });
     artifactGroup.position.y = lerp(artifactGroup.position.y, state.projects * 1.05 - state.scan * 0.25 - state.globe * 0.36, 0.045);
     artifactGroup.position.z = lerp(artifactGroup.position.z, -state.projects * 1.35 - state.scan * 1.2 + state.globe * -1.2, 0.045);
-    artifacts.forEach((artifact, index) => {
-      const base = artifact.userData.base;
-      const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
-      const laneOffset = (index - state.activeProject) * (isMobile ? 3.9 : 5.6);
-      artifact.position.x = lerp(artifact.position.x, laneOffset + state.mouseX * (0.22 + index * 0.06), 0.055);
-      artifact.position.y = base.y + Math.sin(time * 0.62 + index) * 0.12 + active * 0.86 + state.scan * 0.18;
-      artifact.position.z = base.z + Math.sin(time * 0.38 + index) * 0.16 - active * 2.7 + Math.abs(index - state.activeProject) * -1.08 - state.scan * 1.0;
-      artifact.rotation.x = Math.sin(time * 0.28 + index) * 0.035 + state.mouseY * -0.025;
-      artifact.rotation.y = base.ry + state.mouseX * 0.065 + active * 0.22 - (index - state.activeProject) * 0.16;
-      artifact.scale.setScalar(0.68 + state.projects * 0.28 + active * 0.72 + state.scan * 0.12);
-    });
-    artifactHalos.forEach((halo, index) => {
-      const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
-      const artifact = artifacts[index];
-      halo.position.copy(artifact.position);
-      halo.position.z += 0.12;
-      halo.rotation.copy(artifact.rotation);
-      halo.scale.setScalar(0.9 + active * 0.58 + state.scan * 0.16);
-      halo.material.opacity = artifactOpacity * (0.035 + active * 0.14);
-    });
+    if (allowProjectObjects) {
+      artifacts.forEach((artifact, index) => {
+        const base = artifact.userData.base;
+        const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
+        const laneOffset = (index - state.activeProject) * (isMobile ? 3.9 : 5.6);
+        artifact.position.x = lerp(artifact.position.x, laneOffset + state.mouseX * (0.22 + index * 0.06), 0.055);
+        artifact.position.y = base.y + Math.sin(time * 0.62 + index) * 0.12 + active * 0.86 + state.scan * 0.18;
+        artifact.position.z = base.z + Math.sin(time * 0.38 + index) * 0.16 - active * 2.7 + Math.abs(index - state.activeProject) * -1.08 - state.scan * 1.0;
+        artifact.rotation.x = Math.sin(time * 0.28 + index) * 0.035 + state.mouseY * -0.025;
+        artifact.rotation.y = base.ry + state.mouseX * 0.065 + active * 0.22 - (index - state.activeProject) * 0.16;
+        artifact.scale.setScalar(0.68 + state.projects * 0.28 + active * 0.72 + state.scan * 0.12);
+      });
+      artifactHalos.forEach((halo, index) => {
+        const active = Math.max(0, 1 - Math.abs(state.activeProject - index));
+        const artifact = artifacts[index];
+        halo.position.copy(artifact.position);
+        halo.position.z += 0.12;
+        halo.rotation.copy(artifact.rotation);
+        halo.scale.setScalar(0.9 + active * 0.58 + state.scan * 0.16);
+        halo.material.opacity = artifactOpacity * (0.035 + active * 0.14);
+      });
+    }
 
     scanMaterial.opacity = Math.max(0, state.projects * 0.5 + state.scan * 0.16 - state.globe * 0.34 - state.about * 0.2);
     scanGroup.position.set(
@@ -920,14 +926,16 @@ export function initDataTerrain(options = {}) {
       lerp(scanGroup.position.y, 0.92 + state.projects * 0.62, 0.055),
       lerp(scanGroup.position.z, -7.9 - state.globe * 1.2, 0.055)
     );
-    scanPlanes.forEach((plane, index) => {
-      const offset = index - 1;
-      plane.position.x = offset * 0.22;
-      plane.position.z = offset * -0.22 + Math.sin(time * 0.72 + plane.userData.phase) * 0.08;
-      plane.rotation.x = Math.sin(time * 0.28 + index) * 0.035;
-      plane.rotation.y = state.mouseX * 0.04 + offset * 0.03;
-      plane.scale.setScalar(0.88 + state.projects * 0.2 + Math.sin(time * 1.4 + index) * 0.025);
-    });
+    if (allowProjectObjects) {
+      scanPlanes.forEach((plane, index) => {
+        const offset = index - 1;
+        plane.position.x = offset * 0.22;
+        plane.position.z = offset * -0.22 + Math.sin(time * 0.72 + plane.userData.phase) * 0.08;
+        plane.rotation.x = Math.sin(time * 0.28 + index) * 0.035;
+        plane.rotation.y = state.mouseX * 0.04 + offset * 0.03;
+        plane.scale.setScalar(0.88 + state.projects * 0.2 + Math.sin(time * 1.4 + index) * 0.025);
+      });
+    }
     const scanOpacity = Math.max(0, state.scan * 0.82 - state.about * 0.25);
     scanFrameMaterial.opacity = scanOpacity * 0.42;
     scanGoldMaterial.opacity = scanOpacity * 0.32;
@@ -935,32 +943,36 @@ export function initDataTerrain(options = {}) {
     scanPassageGroup.position.z = lerp(scanPassageGroup.position.z, state.scan * 3.4 + state.globe * 2.1, 0.055);
     scanPassageGroup.position.y = lerp(scanPassageGroup.position.y, state.scan * 0.28 - state.globe * 0.2, 0.055);
     scanPassageGroup.rotation.y = lerp(scanPassageGroup.rotation.y, state.mouseX * 0.05, 0.04);
-    scanPassageGroup.children.forEach((item, index) => {
-      item.position.z = item.userData.baseZ + Math.sin(time * 0.8 + index * 0.5) * 0.08;
-      item.scale.setScalar(1 + state.scan * 0.08 + Math.sin(time * 1.4 + index) * 0.012);
-    });
-    projectBeacons.forEach((beacon, index) => {
-      const distance = Math.abs(state.focusProject - index);
-      const active = state.targetFocusProject === index ? 1 : Math.max(0, 1 - distance);
-      const pulse = 1 + Math.sin(time * 3.0 + index) * 0.28;
-      beacon.position.y = beacon.userData.base.y + Math.sin(time * 0.8 + index) * 0.18;
-      beacon.position.z = beacon.userData.base.z + terrain.position.z * 0.25;
-      beacon.scale.setScalar((1.2 + active * 3.8) * pulse);
-      beacon.material.opacity = (0.08 + active * 0.62) * (state.projects + 0.2) * (1 - state.about * 0.6);
-    });
+    if (allowProjectObjects) {
+      scanPassageGroup.children.forEach((item, index) => {
+        item.position.z = item.userData.baseZ + Math.sin(time * 0.8 + index * 0.5) * 0.08;
+        item.scale.setScalar(1 + state.scan * 0.08 + Math.sin(time * 1.4 + index) * 0.012);
+      });
+      projectBeacons.forEach((beacon, index) => {
+        const distance = Math.abs(state.focusProject - index);
+        const active = state.targetFocusProject === index ? 1 : Math.max(0, 1 - distance);
+        const pulse = 1 + Math.sin(time * 3.0 + index) * 0.28;
+        beacon.position.y = beacon.userData.base.y + Math.sin(time * 0.8 + index) * 0.18;
+        beacon.position.z = beacon.userData.base.z + terrain.position.z * 0.25;
+        beacon.scale.setScalar((1.2 + active * 3.8) * pulse);
+        beacon.material.opacity = (0.08 + active * 0.62) * (state.projects + 0.2) * (1 - state.about * 0.6);
+      });
+    }
 
     routeGroup.position.z = terrain.position.z * 0.45;
     routeMaterial.opacity = 0.16 + state.projects * 0.25 + state.scan * 0.24 + state.globe * 0.12 - state.about * 0.2;
-    packets.forEach((packet, index) => {
-      const t = (time * (0.055 + index * 0.002) + packet.userData.phase) % 1;
-      const lane = index % 3;
-      packet.position.x = -17 + t * 34;
-      packet.position.y = -1.72 + Math.sin(t * Math.PI * 5 + lane * 1.6) * (0.18 + lane * 0.05);
-      packet.position.z = (3 - lane * 5) - t * 16 + routeGroup.position.z;
-      const scale = 0.7 + Math.sin(t * Math.PI) * 1.6;
-      packet.scale.setScalar(scale);
-      packet.material.opacity = (0.22 + state.projects * 0.42 + state.scan * 0.28 + state.globe * 0.18) * (1 - state.about * 0.6);
-    });
+    if (allowProjectObjects) {
+      packets.forEach((packet, index) => {
+        const t = (time * (0.055 + index * 0.002) + packet.userData.phase) % 1;
+        const lane = index % 3;
+        packet.position.x = -17 + t * 34;
+        packet.position.y = -1.72 + Math.sin(t * Math.PI * 5 + lane * 1.6) * (0.18 + lane * 0.05);
+        packet.position.z = (3 - lane * 5) - t * 16 + routeGroup.position.z;
+        const scale = 0.7 + Math.sin(t * Math.PI) * 1.6;
+        packet.scale.setScalar(scale);
+        packet.material.opacity = (0.22 + state.projects * 0.42 + state.scan * 0.28 + state.globe * 0.18) * (1 - state.about * 0.6);
+      });
+    }
 
     glowMaterial.opacity = 0.035 + state.projects * 0.04 + state.scan * 0.045 + state.globe * 0.03 - state.about * 0.03;
 
@@ -1018,8 +1030,26 @@ export function initDataTerrain(options = {}) {
     camera.position.z = lerp(camera.position.z, targetCamZ, 0.035);
     camera.lookAt(lookX, lookY, lookZ);
 
+  }
+
+  function renderTerrain() {
     renderer.render(scene, camera);
   }
 
-  animate();
+  visualScheduler.register('terrain', {
+    frameInterval: isLite ? 34 : isBalanced ? 24 : 16,
+    shouldRun(schedulerState) {
+      return isInViewport && schedulerState.activeZone !== 'about';
+    },
+    update(_delta, schedulerState) {
+      updateTerrain(schedulerState);
+    },
+    render() {
+      renderTerrain();
+    },
+    destroy() {
+      observer.disconnect();
+      renderer.dispose();
+    }
+  });
 }

@@ -1,6 +1,9 @@
 // src/sections/momentum.js — Scroll momentum & interactive UI systems
 // Called by main.js after markup is injected into the DOM.
 
+import { gsap } from 'gsap';
+import { visualScheduler } from '../performance/visualScheduler.js';
+
 export function initMomentum() {
 /* ═══════════════════════════════════════════════════════════════
    SCROLL-MOMENTUM & INTERACTIVE UI SYSTEMS
@@ -25,6 +28,8 @@ export function initMomentum() {
 
   window.addEventListener('scroll', function(){
     SY = window.scrollY;
+    var pageHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    visualScheduler.setScroll(SY, SY / pageHeight);
     needsUiUpdate = true;
     scheduleUiUpdate();
   }, {passive:true});
@@ -230,6 +235,7 @@ export function initMomentum() {
     });
   }
   updateCache();
+  visualScheduler.setScroll(SY, SY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight));
   scheduleUiUpdate();
 
   /* ── Mobile Nav Drawer ────────────────────────────────────────── */

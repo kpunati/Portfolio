@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { visualScheduler } from '../performance/visualScheduler.js';
 
 export function initGlobe(options = {}) {
 // ── GLOBE DASHBOARD ───────────────────────────────────────────────────────
@@ -217,7 +218,7 @@ export function initGlobe(options = {}) {
   // Hoist Raycaster — create once, reuse on every mousemove (avoids GC churn)
   var _ray = new THREE.Raycaster();
   var _pointer = new THREE.Vector2();
-  globeLeft.addEventListener('mousedown',function(e){isDrag=true;autoRot=false;prevM={x:e.clientX,y:e.clientY};});
+  globeLeft.addEventListener('mousedown',function(e){isDrag=true;autoRot=false;visualScheduler.pause('terrain');prevM={x:e.clientX,y:e.clientY};});
   globeLeft.addEventListener('mousemove',function(e){
     var rect=globeLeft.getBoundingClientRect();
     var mx=(e.clientX-rect.left)/rect.width*2-1, my=-(e.clientY-rect.top)/rect.height*2+1;
@@ -238,12 +239,12 @@ export function initGlobe(options = {}) {
       tt.style.left=(e.clientX-rect.left+12)+'px'; tt.style.top=(e.clientY-rect.top-10)+'px'; tt.style.display='block';
     } else { document.getElementById('g-tooltip').style.display='none'; }
   });
-  globeLeft.addEventListener('mouseup',function(){isDrag=false;setTimeout(function(){autoRot=true;},3000);});
-  globeLeft.addEventListener('mouseleave',function(){isDrag=false;document.getElementById('g-tooltip').style.display='none';});
+  globeLeft.addEventListener('mouseup',function(){isDrag=false;visualScheduler.resume('terrain');setTimeout(function(){autoRot=true;},3000);});
+  globeLeft.addEventListener('mouseleave',function(){isDrag=false;visualScheduler.resume('terrain');document.getElementById('g-tooltip').style.display='none';});
   globeLeft.addEventListener('wheel',function(e){camera.position.z=Math.max(1.6,Math.min(5,camera.position.z+e.deltaY*.002));},{passive:true});
 
-  // Render loop
-  var issT=0, isVis=true, isInViewport=true, hasRendered=false, lastFrame=0;
+	  // Scheduler-owned render loop
+	  var issT=0, isVis=true, isInViewport=true, hasRendered=false;
   document.addEventListener('visibilitychange',function(){isVis=!document.hidden; updateDataTimers();});
   var observer = new IntersectionObserver(function(entries){
     isInViewport = entries[0].isIntersecting;
@@ -251,32 +252,40 @@ export function initGlobe(options = {}) {
   }, { threshold: 0.01 });
   observer.observe(canvas);
 
-  function loop(){
-    requestAnimationFrame(loop);
-    if(!isVis || !isInViewport) return;
-    var now=performance.now();
-    var frameBudget=isLite ? 34 : isBalanced ? 24 : 16;
-    if(now-lastFrame<frameBudget) return;
-    lastFrame=now;
-    var emerge = Math.max(0, Math.min(1, globeHooks.emerge || 0));
-    var stageLift = (1 - emerge) * 0.18;
+	  function updateGlobe(){
+	    var emerge = Math.max(0, Math.min(1, globeHooks.emerge || 0));
+	    var stageLift = (1 - emerge) * 0.18;
     earthMesh.position.y = stageLift;
     atmMesh.position.y = stageLift;
     eqMesh.position.y = stageLift;
     fireMesh.position.y = stageLift;
-    camera.position.z += ((2.95 - emerge * 0.28) - camera.position.z) * 0.015;
-    if(autoRot)[earthMesh,atmMesh,eqMesh,fireMesh].forEach(function(m){m.rotation.y+=autoSpd * (1 + emerge * 1.6);});
-    // issLabel auto-rotates as child of earthMesh
-    issT+=.04; issRingMat.opacity=.4+Math.sin(issT)*.3; issRingMesh.scale.setScalar(1+Math.sin(issT)*.14);
-    renderer.render(scene,camera);
-    if(!hasRendered) {
+	    camera.position.z += ((2.95 - emerge * 0.28) - camera.position.z) * 0.015;
+	    if(autoRot)[earthMesh,atmMesh,eqMesh,fireMesh].forEach(function(m){m.rotation.y+=autoSpd * (1 + emerge * 1.6);});
+	    // issLabel auto-rotates as child of earthMesh
+	    issT+=.04; issRingMat.opacity=.4+Math.sin(issT)*.3; issRingMesh.scale.setScalar(1+Math.sin(issT)*.14);
+	  }
+
+	  function renderGlobe(){
+	    renderer.render(scene,camera);
+	    if(!hasRendered) {
       hasRendered=true;
       hideLoader();
       var shell=document.getElementById('globe-embed-shell');
-      if(shell) shell.classList.add('globe-rendered');
-    }
-  }
-  loop();
+	      if(shell) shell.classList.add('globe-rendered');
+	    }
+	  }
+
+	  visualScheduler.register('globe', {
+	    frameInterval: isLite ? 34 : isBalanced ? 24 : 16,
+	    shouldRun:function(){ return isVis && isInViewport; },
+	    update:function(){ updateGlobe(); },
+	    render:function(){ renderGlobe(); },
+	    destroy:function(){
+	      observer.disconnect();
+	      stopDataTimers();
+	      renderer.dispose();
+	    }
+	  });
 
   // Data
   function fetchEQ(){

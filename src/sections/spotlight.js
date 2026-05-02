@@ -26,6 +26,9 @@ export function initSpotlight() {
     cards.forEach((card, i) => {
       const rect = rects[i];
       if (!rect) return;
+      const active = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+      card.classList.toggle('spotlight-active', active || card.classList.contains('is-active'));
+      if (!active && !card.classList.contains('is-active')) return;
       card.style.setProperty('--x', (x - rect.left).toFixed(1));
       card.style.setProperty('--xp', ((x - rect.left) / rect.width).toFixed(3));
       card.style.setProperty('--y', (y - rect.top).toFixed(1));

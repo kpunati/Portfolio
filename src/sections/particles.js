@@ -1,26 +1,23 @@
 // src/sections/particles.js
-// Scroll reveal, tab switcher, Three.js DNA helix with scroll journey.
-// Called by main.js after markup is injected.
+// Dashboard tab wiring plus the scheduler-owned Three.js helix.
+
+import * as THREE from 'three';
+import { visualScheduler } from '../performance/visualScheduler.js';
 
 export function initParticles(options = {}) {
-// Scroll reveal is now handled by GSAP ScrollTrigger in gsap-scroll.js
-
-document.querySelectorAll('.embed-shell').forEach(shell => {
-  shell.querySelectorAll('.embed-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      shell.querySelectorAll('.embed-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+  document.querySelectorAll('.embed-shell').forEach(shell => {
+    shell.querySelectorAll('.embed-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        shell.querySelectorAll('.embed-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
     });
   });
-});
 
   if (options.prefersReducedMotion) return;
 
-  /* ── Three.js Helix — Full-Page Drifting ────────────────────── */
-(function(){
-  if(typeof THREE === 'undefined') return;
   const canvas = document.getElementById('helix-canvas');
-  if(!canvas) return;
+  if (!canvas) return;
 
   const isMobile = window.innerWidth < 760;
   const quality = options.visualQuality || window.__portfolioVisualQuality || 'balanced';
@@ -43,147 +40,157 @@ document.querySelectorAll('.embed-shell').forEach(shell => {
   const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 0, 5.5);
 
-  function resize(){
-    const W=window.innerWidth, H=window.innerHeight;
-    renderer.setSize(W, H);
-    camera.aspect=W/H;
+  function resize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
   }
-  // Debounce helix resize
-  let _helixResizeTimer;
-  window.addEventListener('resize', () => { clearTimeout(_helixResizeTimer); _helixResizeTimer = setTimeout(resize, 160); });
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 160);
+  });
   resize();
 
-  const TURNS=isLite ? 3 : 5, PPT=isLite ? 26 : isBalanced ? 34 : 42, TOTAL=TURNS*PPT, HEIGHT=8, HRAD=1.35;
-  function makeHelixPoints(phase){
-    const pts=[];
-    for(let i=0;i<=TOTAL;i++){
-      const t=i/TOTAL, angle=t*TURNS*Math.PI*2+phase, y=(t-.5)*HEIGHT;
-      pts.push(new THREE.Vector3(Math.cos(angle)*HRAD, y, Math.sin(angle)*HRAD));
+  const turns = isLite ? 3 : 5;
+  const pointsPerTurn = isLite ? 26 : isBalanced ? 34 : 42;
+  const total = turns * pointsPerTurn;
+  const height = 8;
+  const radius = 1.35;
+  function makeHelixPoints(phase) {
+    const points = [];
+    for (let i = 0; i <= total; i += 1) {
+      const t = i / total;
+      const angle = t * turns * Math.PI * 2 + phase;
+      points.push(new THREE.Vector3(Math.cos(angle) * radius, (t - .5) * height, Math.sin(angle) * radius));
     }
-    return pts;
+    return points;
   }
 
   const mat1 = new THREE.MeshStandardMaterial({
-    color:0xFFD700,
-    emissive:0x664400,
-    emissiveIntensity:0.5,
-    metalness:1.0,
-    roughness:0.12,
-    transparent:true,
-    opacity:.95
+    color: 0xFFD700,
+    emissive: 0x664400,
+    emissiveIntensity: 0.5,
+    metalness: 1.0,
+    roughness: 0.12,
+    transparent: true,
+    opacity: .95
   });
   const mat2 = new THREE.MeshStandardMaterial({
-    color:0xFFC125,
-    emissive:0x553300,
-    emissiveIntensity:0.4,
-    metalness:1.0,
-    roughness:0.10,
-    transparent:true,
-    opacity:.85
+    color: 0xFFC125,
+    emissive: 0x553300,
+    emissiveIntensity: 0.4,
+    metalness: 1.0,
+    roughness: 0.10,
+    transparent: true,
+    opacity: .85
   });
   const glowMat = new THREE.MeshBasicMaterial({
-    color:0xFFD700,
-    transparent:true,
-    opacity:.20,
-    blending:THREE.AdditiveBlending,
-    depthWrite:false
+    color: 0xFFD700,
+    transparent: true,
+    opacity: .20,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
   });
 
   const radialSegments = isLite ? 8 : 12;
-  const helix1 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0)), TOTAL, 0.13, radialSegments, false), mat1);
-  const helix2 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(Math.PI)), TOTAL, 0.095, radialSegments, false), mat2);
-  const helixGlow = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0.18)), TOTAL, 0.19, isLite ? 6 : 10, false), glowMat);
+  const helix1 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0)), total, 0.13, radialSegments, false), mat1);
+  const helix2 = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(Math.PI)), total, 0.095, radialSegments, false), mat2);
+  const helixGlow = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(makeHelixPoints(0.18)), total, 0.19, isLite ? 6 : 10, false), glowMat);
 
   const rungGroup = new THREE.Group();
-  const RUNGS = TURNS * (isLite ? 4 : 6);
+  const rungCount = turns * (isLite ? 4 : 6);
   const rungMat = new THREE.MeshStandardMaterial({
-    color:0xFFE066,
-    emissive:0x442200,
-    emissiveIntensity:0.3,
-    metalness:1.0,
-    roughness:0.15,
-    transparent:true,
-    opacity:.5
+    color: 0xFFE066,
+    emissive: 0x442200,
+    emissiveIntensity: 0.3,
+    metalness: 1.0,
+    roughness: 0.15,
+    transparent: true,
+    opacity: .5
   });
-  for(let i=0;i<=RUNGS;i++){
-    const t=i/RUNGS, angle=t*TURNS*Math.PI*2, y=(t-.5)*HEIGHT;
-    const p1=new THREE.Vector3(Math.cos(angle)*HRAD, y, Math.sin(angle)*HRAD);
-    const p2=new THREE.Vector3(Math.cos(angle+Math.PI)*HRAD, y, Math.sin(angle+Math.PI)*HRAD);
-    var rc=new THREE.LineCurve3(p1,p2);
-    rungGroup.add(new THREE.Mesh(new THREE.TubeGeometry(rc,1,0.022,isLite ? 4 : 6,false),rungMat));
+  for (let i = 0; i <= rungCount; i += 1) {
+    const t = i / rungCount;
+    const angle = t * turns * Math.PI * 2;
+    const y = (t - .5) * height;
+    const p1 = new THREE.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+    const p2 = new THREE.Vector3(Math.cos(angle + Math.PI) * radius, y, Math.sin(angle + Math.PI) * radius);
+    rungGroup.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(p1, p2), 1, 0.022, isLite ? 4 : 6, false), rungMat));
   }
 
   const helixGroup = new THREE.Group();
   helixGroup.add(helixGlow, helix1, helix2, rungGroup);
   scene.add(helixGroup);
 
-  let targetRotY=0, currentRotY=0, currentX=0, currentY=0, scrollY=window.scrollY || 0, isVisible=true, documentVisible=true, lastFrame=0;
+  let currentRotY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let isVisible = true;
 
   const observer = new IntersectionObserver((entries) => {
     isVisible = entries[0].isIntersecting;
   }, { threshold: 0.01 });
   observer.observe(canvas);
-  document.addEventListener('visibilitychange', () => { documentVisible = !document.hidden; });
-  window.addEventListener('scroll', () => { scrollY = window.scrollY || 0; }, { passive: true });
 
-  function getPageHeight(){ return document.body.scrollHeight - window.innerHeight; }
+  visualScheduler.register('helix', {
+    frameInterval: isLite ? 34 : isBalanced ? 24 : 16,
+    shouldRun(schedulerState) {
+      return isVisible && schedulerState.activeZone !== 'dashboards' && schedulerState.activeZone !== 'about';
+    },
+    update(_delta, schedulerState) {
+      const time = schedulerState.now * .001;
+      const progress = schedulerState.scrollProgress;
 
-  function animate(t){
-    requestAnimationFrame(animate);
-    if(!isVisible || !documentVisible) return;
-    const frameBudget = isLite ? 34 : isBalanced ? 24 : 16;
-    if (t - lastFrame < frameBudget) return;
-    lastFrame = t;
-    const time = t * .001;
-    const pageH = getPageHeight();
-    const progress = pageH > 0 ? scrollY / pageH : 0;
+      let targetCamX;
+      let targetCamY;
+      let targetScale;
+      let targetOpacity;
 
-    currentRotY += (targetRotY - currentRotY) * .04;
+      if (progress < 0.15) {
+        targetCamX = 0; targetCamY = 0; targetScale = 1; targetOpacity = 1;
+      } else if (progress < 0.45) {
+        const p = (progress - 0.15) / 0.30;
+        targetCamX = p * 2.8; targetCamY = -p * 0.4;
+        targetScale = 1 - p * 0.35; targetOpacity = 1 - p * 0.25;
+      } else if (progress < 0.75) {
+        const p = (progress - 0.45) / 0.30;
+        targetCamX = 2.8 + p * 0.4; targetCamY = -0.4 - p * 0.3;
+        targetScale = 0.65 - p * 0.05; targetOpacity = 0.75 - p * 0.1;
+      } else {
+        const p = (progress - 0.75) / 0.25;
+        targetCamX = 3.2 - p * 3.5; targetCamY = -0.7 + p * 0.4;
+        targetScale = 0.60 + p * 0.1; targetOpacity = 0.65 - p * 0.5;
+      }
 
-    let targetCamX, targetCamY, targetScale, targetOpacity;
+      currentRotY += (0 - currentRotY) * .04;
+      currentX += (targetCamX - currentX) * 0.06;
+      currentY += (targetCamY - currentY) * 0.06;
 
-    if(progress < 0.15){
-      targetCamX = 0; targetCamY = 0; targetScale = 1; targetOpacity = 1;
-    } else if(progress < 0.45){
-      const p = (progress - 0.15) / 0.30;
-      targetCamX = p * 2.8; targetCamY = -p * 0.4;
-      targetScale = 1 - p * 0.35; targetOpacity = 1 - p * 0.25;
-    } else if(progress < 0.75){
-      const p = (progress - 0.45) / 0.30;
-      targetCamX = 2.8 + p * 0.4; targetCamY = -0.4 - p * 0.3;
-      targetScale = 0.65 - p * 0.05; targetOpacity = 0.75 - p * 0.1;
-    } else {
-      const p = (progress - 0.75) / 0.25;
-      targetCamX = 3.2 - p * 3.5; targetCamY = -0.7 + p * 0.4;
-      targetScale = 0.60 + p * 0.1; targetOpacity = 0.65 - p * 0.5;
+      helixGroup.position.x = currentX;
+      helixGroup.position.y = currentY;
+      helixGroup.scale.setScalar(helixGroup.scale.x + (targetScale - helixGroup.scale.x) * 0.06);
+
+      const helixBoost = (window._particleHooks && window._particleHooks.helixBoost) || 0;
+      helixGroup.rotation.y = time * (0.28 + helixBoost) + currentRotY;
+
+      const breathe = 1 + Math.sin(time * 0.5) * 0.015;
+      helix1.scale.setScalar(breathe);
+      helix2.scale.setScalar(breathe);
+
+      const opacity = mat1.opacity + (targetOpacity * 0.55 - mat1.opacity) * 0.06;
+      mat1.opacity = Math.min(0.94, opacity * 1.26);
+      mat2.opacity = Math.min(0.82, opacity * 0.96);
+      glowMat.opacity = Math.min(0.22, opacity * 0.22);
+      rungMat.opacity = Math.min(0.48, opacity * 0.58);
+    },
+    render() {
+      renderer.render(scene, camera);
+    },
+    destroy() {
+      observer.disconnect();
+      renderer.dispose();
     }
-
-    currentX += (targetCamX - currentX) * 0.06;
-    currentY += (targetCamY - currentY) * 0.06;
-
-    helixGroup.position.x = currentX;
-    helixGroup.position.y = currentY;
-
-    const s = helixGroup.scale.x + (targetScale - helixGroup.scale.x) * 0.06;
-    helixGroup.scale.setScalar(s);
-
-    const helixBoost = (window._particleHooks && window._particleHooks.helixBoost) || 0;
-    helixGroup.rotation.y = time * (0.28 + helixBoost) + currentRotY;
-
-    const breathe = 1 + Math.sin(time * 0.5) * 0.015;
-    helix1.scale.setScalar(breathe);
-    helix2.scale.setScalar(breathe);
-
-    const op = mat1.opacity + (targetOpacity * 0.55 - mat1.opacity) * 0.06;
-    mat1.opacity = Math.min(0.94, op * 1.26);
-    mat2.opacity = Math.min(0.82, op * 0.96);
-    glowMat.opacity = Math.min(0.22, op * 0.22);
-    rungMat.opacity = Math.min(0.48, op * 0.58);
-
-    renderer.render(scene, camera);
-  }
-  requestAnimationFrame(animate);
-})();
-
+  });
 }

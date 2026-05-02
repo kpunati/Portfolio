@@ -235,36 +235,40 @@ export const markup = `
     <h2 class="section-heading reveal reveal-delay-1" id="projects-heading">Projects</h2>
     <p class="section-sub reveal reveal-delay-2">Each project bridges data and product — built end-to-end, from raw pipeline to polished interface.</p>
       <div class="project-scroll-stage">
-        <!-- Sidebar: sticky copy with per-project panels scrubbed by GSAP -->
-        <div class="project-stage-copy reveal reveal-delay-3" aria-hidden="true">
-          <div class="project-stage-kicker">Project Systems</div>
+        <!-- Sidebar: rail-positioned copy with per-project panels scrubbed by GSAP -->
+        <div class="project-stage-rail" aria-hidden="true">
+          <div class="project-stage-track">
+            <div class="project-stage-copy reveal reveal-delay-3">
+              <div class="project-stage-kicker">Project Systems</div>
 
-          <!-- Per-project panels — GSAP scrubs between these -->
-          <div class="project-panels-wrap">
-            <div class="project-panel" data-index="0">
-              <div class="project-stage-title">Stock Sentiment Analysis</div>
-              <div class="project-stage-panel-desc">Real-time NLP pipeline turning financial news &amp; social signals into actionable equity sentiment scores.</div>
-            </div>
-            <div class="project-panel" data-index="1">
-              <div class="project-stage-title">Neural Kitchen</div>
-              <div class="project-stage-panel-desc">AI recipe generation from whatever ingredients you have — LLM reasoning meets a curated ingredient graph.</div>
-            </div>
-            <div class="project-panel" data-index="2">
-              <div class="project-stage-title">AI Aware Newsletter</div>
-              <div class="project-stage-panel-desc">Fully automated daily AI digest — scrape, summarise, format, and distribute with zero manual intervention.</div>
-            </div>
-          </div>
+              <!-- Per-project panels — GSAP scrubs between these -->
+              <div class="project-panels-wrap">
+                <div class="project-panel" data-index="0">
+                  <div class="project-stage-title">Stock Sentiment Analysis</div>
+                  <div class="project-stage-panel-desc">Real-time NLP pipeline turning financial news &amp; social signals into actionable equity sentiment scores.</div>
+                </div>
+                <div class="project-panel" data-index="1">
+                  <div class="project-stage-title">Neural Kitchen</div>
+                  <div class="project-stage-panel-desc">AI recipe generation from whatever ingredients you have — LLM reasoning meets a curated ingredient graph.</div>
+                </div>
+                <div class="project-panel" data-index="2">
+                  <div class="project-stage-title">AI Aware Newsletter</div>
+                  <div class="project-stage-panel-desc">Fully automated daily AI digest — scrape, summarise, format, and distribute with zero manual intervention.</div>
+                </div>
+              </div>
 
-          <div class="project-stage-steps">
-            <span><b>01</b> Signal ingestion</span>
-            <span><b>02</b> Model reasoning</span>
-            <span><b>03</b> Automated distribution</span>
+              <div class="project-stage-steps">
+                <span><b>01</b> Signal ingestion</span>
+                <span><b>02</b> Model reasoning</span>
+                <span><b>03</b> Automated distribution</span>
+              </div>
+            </div>
           </div>
         </div>
     <div class="projects-grid">
 
       <!-- Stock Sentiment -->
-      <a href="https://stock-dashboardv2.vercel.app/" class="project-card glow-card reveal reveal-delay-1" data-project-index="0" data-glow data-color="gold" target="_blank" rel="noopener noreferrer" aria-label="Stock Sentiment Analysis — open live dashboard">
+      <a href="https://stock-dashboardv2.vercel.app/" class="project-card glow-card reveal-opacity reveal-delay-1" data-project-index="0" data-glow data-color="gold" target="_blank" rel="noopener noreferrer" aria-label="Stock Sentiment Analysis — open live dashboard">
         <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" aria-hidden="true">
@@ -299,7 +303,7 @@ export const markup = `
       </a>
 
       <!-- Neural Kitchen -->
-      <a href="https://neuralkitchen.vercel.app" class="project-card glow-card reveal reveal-delay-2" data-project-index="1" data-glow data-color="purple" target="_blank" rel="noopener noreferrer" aria-label="Neural Kitchen">
+      <a href="https://neuralkitchen.vercel.app" class="project-card glow-card reveal-opacity reveal-delay-2" data-project-index="1" data-glow data-color="purple" target="_blank" rel="noopener noreferrer" aria-label="Neural Kitchen">
         <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" style="background:var(--color-secondary-hl);border-color:rgba(122,90,143,0.2);color:#B8A0CC" aria-hidden="true">
@@ -330,7 +334,7 @@ export const markup = `
       </a>
 
       <!-- AI Newsletter -->
-      <a href="https://aiaware.beehiiv.com" class="project-card glow-card reveal reveal-delay-3" data-project-index="2" data-glow data-color="green" target="_blank" rel="noopener noreferrer" aria-label="AI Aware Newsletter">
+      <a href="https://aiaware.beehiiv.com" class="project-card glow-card reveal-opacity reveal-delay-3" data-project-index="2" data-glow data-color="green" target="_blank" rel="noopener noreferrer" aria-label="AI Aware Newsletter">
         <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" style="background:rgba(77,170,116,0.1);border-color:rgba(77,170,116,0.2);color:var(--color-success)" aria-hidden="true">
@@ -500,22 +504,22 @@ export const markup = `
         </div>
       </div>
       <div class="about-kpis">
-        <div class="about-kpi glow-card reveal reveal-delay-1" data-glow data-color="gold">
+        <div class="about-kpi glow-card reveal-opacity reveal-delay-1" data-glow data-color="gold">
           <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val">3<span class="accent">+</span></div>
           <div class="about-kpi-label">Years Analysing Data</div>
         </div>
-        <div class="about-kpi glow-card reveal reveal-delay-2" data-glow data-color="gold">
+        <div class="about-kpi glow-card reveal-opacity reveal-delay-2" data-glow data-color="gold">
           <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val">10<span class="accent">+</span></div>
           <div class="about-kpi-label">Projects Shipped</div>
         </div>
-        <div class="about-kpi glow-card reveal reveal-delay-3" data-glow data-color="gold">
+        <div class="about-kpi glow-card reveal-opacity reveal-delay-3" data-glow data-color="gold">
           <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val"><span class="accent">&#8734;</span></div>
           <div class="about-kpi-label">Curiosity</div>
         </div>
-        <div class="about-kpi glow-card reveal reveal-delay-4" data-glow data-color="gold">
+        <div class="about-kpi glow-card reveal-opacity reveal-delay-4" data-glow data-color="gold">
           <div class="glow-inner" data-glow></div>
           <div class="about-kpi-val">0<span class="accent">ms</span></div>
           <div class="about-kpi-label">Time to Start Building</div>

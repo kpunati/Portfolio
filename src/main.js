@@ -1,6 +1,7 @@
 // src/main.js - Portfolio orchestrator
 
 import { markup } from './markup.js';
+import { visualScheduler } from './performance/visualScheduler.js';
 
 function whenIdle(callback) {
   if ('requestIdleCallback' in window) {
@@ -74,22 +75,20 @@ async function bootVisuals() {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const visualQuality = detectVisualQuality(prefersReducedMotion);
   setVisualQuality(visualQuality);
+  visualScheduler.configure({ prefersReducedMotion, visualQuality });
 
   const [
-    { initParticles },
     { initMomentum },
     { initLayers },
     { initSpotlight },
     { initGSAPScrollAnimations },
   ] = await Promise.all([
-    import('./sections/particles.js'),
     import('./sections/momentum.js'),
     import('./sections/layers.js'),
     import('./sections/spotlight.js'),
     import('./sections/gsap-scroll.js'),
   ]);
 
-  initParticles({ prefersReducedMotion, visualQuality });
   initMomentum();
   initLayers();
 
@@ -101,6 +100,34 @@ async function bootVisuals() {
   // scroll reveal, project sidebar scrub, and hero typewriter.
   initGSAPScrollAnimations();
 
+  const loadHelixWhenNeeded = () => {
+    const helixCanvas = document.getElementById('helix-canvas');
+    const projects = document.getElementById('projects');
+    if (!helixCanvas || !projects || prefersReducedMotion) return;
+
+    let loaded = false;
+    const load = async () => {
+      if (loaded) return;
+      loaded = true;
+      const { initParticles } = await import('./sections/particles.js');
+      initParticles({ prefersReducedMotion, visualQuality });
+    };
+
+    if (!('IntersectionObserver' in window)) {
+      whenIdle(load);
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        load();
+      }
+    }, { rootMargin: '900px 0px', threshold: 0.01 });
+
+    observer.observe(projects);
+  };
+
   if (!prefersReducedMotion) {
     whenIdle(async () => {
       const { initDataTerrain } = await import('./scene/dataTerrain.js');
@@ -108,6 +135,7 @@ async function bootVisuals() {
     });
   }
 
+  loadHelixWhenNeeded();
   loadGlobeWhenNeeded({ visualQuality });
 }
 

@@ -2,12 +2,11 @@
 // GSAP ScrollTrigger integration — replaces per-frame getBoundingClientRect calls
 // in layers.js and adds project sidebar alignment + hero typewriter.
 
-export function initGSAPScrollAnimations() {
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-    console.warn('gsap-scroll: GSAP/ScrollTrigger not available');
-    return;
-  }
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { visualScheduler } from '../performance/visualScheduler.js';
 
+export function initGSAPScrollAnimations() {
   gsap.registerPlugin(ScrollTrigger);
 
   const root = document.documentElement;
@@ -29,6 +28,7 @@ export function initGSAPScrollAnimations() {
     scrub: 0.3,
     onUpdate(self) {
       const p = self.progress;
+      visualScheduler.setSectionProgress('projects', p);
       root.style.setProperty('--projects-depth', p.toFixed(3));
       hooks.densityBoost = p * 1.28;
       hooks.projectsDrift = p;
@@ -45,6 +45,7 @@ export function initGSAPScrollAnimations() {
     scrub: 0.4,
     onUpdate(self) {
       const p = self.progress;
+      visualScheduler.setSectionProgress('aurora', p);
       root.style.setProperty('--aurora-progress', p.toFixed(3));
       const aurora = document.getElementById('aurora-bleed');
       if (aurora) aurora.classList.toggle('visible', p > 0.02);
@@ -59,6 +60,8 @@ export function initGSAPScrollAnimations() {
     scrub: 0.4,
     onUpdate(self) {
       const p = self.progress;
+      visualScheduler.setSectionProgress('globe', p);
+      visualScheduler.setSectionProgress('dashboards', p);
       root.style.setProperty('--globe-emerge', p.toFixed(3));
       globeHooks.emerge = p;
       // Globe parallax lift — replaces the per-frame transform in layers.js
@@ -88,6 +91,7 @@ export function initGSAPScrollAnimations() {
     scrub: 0.4,
     onUpdate(self) {
       const p = self.progress * (1 - self.progress * 0.62);
+      visualScheduler.setSectionProgress('scan', p);
       root.style.setProperty('--scan-progress', p.toFixed(3));
       hooks.projectsDrift = (hooks.projectsDrift || 0) + p * 0.35;
     }
@@ -101,6 +105,7 @@ export function initGSAPScrollAnimations() {
     scrub: 0.4,
     onUpdate(self) {
       const p = self.progress;
+      visualScheduler.setSectionProgress('about', p);
       root.style.setProperty('--about-calm', p.toFixed(3));
       hooks.aboutCalm = p;
     }
@@ -121,6 +126,21 @@ export function initGSAPScrollAnimations() {
         ease: 'power3.out',
         stagger: 0.09,
         overwrite: true,
+        onStart() { elements.forEach(el => el.classList.add('visible')); }
+      });
+    }
+  });
+
+  ScrollTrigger.batch('.reveal-opacity:not(.visible)', {
+    start: 'top 87%',
+    once: true,
+    onEnter(elements) {
+      gsap.to(elements, {
+        opacity: 1,
+        duration: 0.72,
+        ease: 'power3.out',
+        stagger: 0.09,
+        overwrite: 'auto',
         onStart() { elements.forEach(el => el.classList.add('visible')); }
       });
     }
@@ -147,34 +167,38 @@ function initProjectSidebar() {
   const cards = Array.from(document.querySelectorAll('.project-card'));
   const steps = Array.from(document.querySelectorAll('.project-stage-steps span'));
   const stageCopy = document.querySelector('.project-stage-copy');
+  const stageTrack = document.querySelector('.project-stage-track');
+  const stage = document.querySelector('.project-scroll-stage');
   const projectCount = Math.min(panels.length, cards.length, steps.length);
   const maxProjectIndex = projectCount - 1;
   let activeIndex = -1;
   let scrollIndex = 0;
   let scrollProgress = 0;
-  let focusOverride = null;
-  let currentSystemY = 0;
   if (projectCount < 2) return;
 
-  function setProjectSystemOffset(index, progress) {
+  function setProjectSystemProgress(progress) {
     if (!stageCopy) return;
+    stageCopy.style.setProperty('--system-progress', progress.toFixed(3));
+  }
+
+  function updateProjectSystemPosition() {
+    if (!stage || !stageCopy || !stageTrack) return;
     if (window.innerWidth <= 900) {
-      stageCopy.style.setProperty('--system-y', '0px');
-      stageCopy.style.transform = '';
+      stageTrack.style.setProperty('--system-y', '0px');
+      stageTrack.style.transform = '';
       return;
     }
-    const activeCard = cards[index];
-    const stageRect = stageCopy.getBoundingClientRect();
-    const cardRect = activeCard ? activeCard.getBoundingClientRect() : stageRect;
-    const baseTop = stageRect.top - currentSystemY;
-    const idealTop = cardRect.top + Math.min(54, cardRect.height * 0.14);
-    const cardAlignY = idealTop - baseTop;
-    const progressNudge = Math.min(1, Math.max(0, (progress * projectCount) - index)) * 10;
-    const maxTravel = Math.max(0, window.innerHeight - baseTop - stageCopy.offsetHeight - 34);
-    const targetY = Math.round(Math.max(-12, Math.min(maxTravel, cardAlignY + progressNudge)));
-    currentSystemY = targetY;
-    stageCopy.style.setProperty('--system-y', `${targetY}px`);
-    stageCopy.style.transform = `translate3d(0, ${targetY}px, 0)`;
+
+    const stageRect = stage.getBoundingClientRect();
+    const copyHeight = stageCopy.offsetHeight;
+    const stageHeight = stage.offsetHeight;
+    const viewportCenterInStage = (window.innerHeight * 0.5) - stageRect.top;
+    const targetY = viewportCenterInStage - (copyHeight * 0.5);
+    const maxY = Math.max(0, stageHeight - copyHeight);
+    const clampedY = Math.max(0, Math.min(maxY, targetY));
+
+    stageTrack.style.setProperty('--system-y', `${Math.round(clampedY)}px`);
+    stageTrack.style.transform = `translate3d(0, ${Math.round(clampedY)}px, 0)`;
   }
 
   function setProjectPanel(index) {
@@ -199,7 +223,7 @@ function initProjectSidebar() {
     const nextIndex = Math.max(0, Math.min(maxProjectIndex, index));
     document.documentElement.style.setProperty('--active-project', String(nextIndex));
     document.documentElement.style.setProperty('--project-local-progress', progress.toFixed(3));
-    setProjectSystemOffset(nextIndex, progress);
+    setProjectSystemProgress(progress);
     if (nextIndex === activeIndex) return;
     activeIndex = nextIndex;
     setProjectPanel(nextIndex);
@@ -225,8 +249,21 @@ function initProjectSidebar() {
   gsap.set(panels, { position: 'absolute', top: 0, left: 0, right: 0, autoAlpha: 0, y: 10 });
   gsap.set(panels[0], { autoAlpha: 1, y: 0 });
   setProjectActive(0, 0, false);
+  updateProjectSystemPosition();
 
-  // Sidebar offset, active cards, and step indicators in sync with the active card.
+  ScrollTrigger.create({
+    trigger: stage,
+    start: 'top bottom',
+    end: 'bottom top',
+    onUpdate: updateProjectSystemPosition,
+    onEnter: updateProjectSystemPosition,
+    onEnterBack: updateProjectSystemPosition,
+    onLeave: updateProjectSystemPosition,
+    onLeaveBack: updateProjectSystemPosition,
+    onRefresh: updateProjectSystemPosition
+  });
+
+  // Active cards and step indicators follow scroll position only.
   ScrollTrigger.create({
     trigger: '#projects',
     start: 'top 28%',
@@ -235,28 +272,16 @@ function initProjectSidebar() {
     onUpdate(self) {
       scrollProgress = self.progress;
       scrollIndex = Math.min(Math.floor(self.progress * projectCount), maxProjectIndex);
-      if (focusOverride === null) setProjectActive(scrollIndex, scrollProgress);
+      updateProjectSystemPosition();
+      setProjectActive(scrollIndex, scrollProgress);
+    },
+    onRefresh() {
+      updateProjectSystemPosition();
     }
   });
 
-  cards.forEach((card, index) => {
-    card.addEventListener('mouseenter', () => {
-      focusOverride = index;
-      setProjectActive(index, scrollProgress);
-    });
-    card.addEventListener('focus', () => {
-      focusOverride = index;
-      setProjectActive(index, scrollProgress);
-    });
-    card.addEventListener('mouseleave', () => {
-      if (focusOverride === index) focusOverride = null;
-      setProjectActive(scrollIndex, scrollProgress);
-    });
-    card.addEventListener('blur', () => {
-      if (focusOverride === index) focusOverride = null;
-      setProjectActive(scrollIndex, scrollProgress);
-    });
-  });
+  window.addEventListener('scroll', updateProjectSystemPosition, { passive: true });
+  window.addEventListener('resize', updateProjectSystemPosition, { passive: true });
 }
 
 /* ── Hero Entrance ──────────────────────────────────────────────── */
