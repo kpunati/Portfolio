@@ -85,19 +85,126 @@ export function initMomentum() {
     });
   });
 
-  Array.prototype.slice.call(document.querySelectorAll('.project-card')).forEach(function(card){
-    card.addEventListener('mousemove', function(event){
+
+  /* ── Project card tilt + click to open modal ────────────────── */
+  Array.prototype.slice.call(document.querySelectorAll('.project-card')).forEach(function(card) {
+    card.addEventListener('mousemove', function(event) {
       var rect = card.getBoundingClientRect();
       var x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
       var y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
       card.style.setProperty('--tilt-x', (-y * 4.5).toFixed(2) + 'deg');
       card.style.setProperty('--tilt-y', (x * 5.5).toFixed(2) + 'deg');
     });
-    card.addEventListener('mouseleave', function(){
+    card.addEventListener('mouseleave', function() {
       card.style.setProperty('--tilt-x', '0deg');
       card.style.setProperty('--tilt-y', '0deg');
     });
+    card.addEventListener('click', function() {
+      var idx = parseInt(card.getAttribute('data-project-open'), 10);
+      if (!isNaN(idx)) openProjectModal(idx);
+    });
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        var idx = parseInt(card.getAttribute('data-project-open'), 10);
+        if (!isNaN(idx)) openProjectModal(idx);
+      }
+    });
   });
+
+  /* ── Project detail modal ── */
+  var PROJECT_DATA = [
+    {
+      kicker: 'AI Powered BI Dashboard',
+      title: 'Stock Sentiment Analysis',
+      desc: 'End-to-end financial intelligence platform driven by a custom AI agent. The agent continuously ingests live market news and social signals, scores sentiment in real time, and surfaces actionable insights alongside fully interactive stock charts with customizable technical indicators \u2014 RSI, MACD, Bollinger Bands, and more.',
+      steps: ['Data ingestion', 'Agent reasoning', 'Live visualisation'],
+      chips: [
+        { label: 'Python', cls: 'chip-gold' },
+        { label: 'Agentic AI', cls: 'chip-gold' },
+        { label: 'Live Charts', cls: 'chip-neutral' },
+        { label: 'APIs', cls: 'chip-neutral' }
+      ],
+      link: 'https://stock-dashboardv2.vercel.app/',
+      accentColor: 'var(--color-primary)'
+    },
+    {
+      kicker: 'AI App',
+      title: 'Neural Kitchen',
+      desc: 'AI-powered web app that generates tailored recipes from whatever ingredients you have on hand. Combines a large language model with a curated ingredient knowledge graph to return relevant, practical meal ideas \u2014 with dietary filters and substitution suggestions.',
+      steps: ['Ingredient parsing', 'LLM generation', 'Recipe delivery'],
+      chips: [
+        { label: 'LLM', cls: 'chip-plum' },
+        { label: 'AI', cls: 'chip-plum' },
+        { label: 'Python', cls: 'chip-neutral' },
+        { label: 'API', cls: 'chip-neutral' }
+      ],
+      link: 'https://neuralkitchen.vercel.app',
+      accentColor: '#B8A0CC'
+    },
+    {
+      kicker: 'Automation',
+      title: 'AI Aware Newsletter',
+      desc: 'Fully automated newsletter pipeline that scrapes AI research sources daily, summarises them using LLMs, formats a structured digest, and distributes on a fixed schedule \u2014 zero manual intervention from end to end.',
+      steps: ['Scrape & summarise', 'Format digest', 'Schedule & send'],
+      chips: [
+        { label: 'Automation', cls: 'chip-success' },
+        { label: 'LLM', cls: 'chip-plum' },
+        { label: 'Python', cls: 'chip-neutral' },
+        { label: 'Scheduling', cls: 'chip-neutral' }
+      ],
+      link: 'https://aiaware.beehiiv.com',
+      accentColor: 'var(--color-success)'
+    }
+  ];
+
+  var projectDetailModal  = document.getElementById('project-detail-modal');
+  var projectDetailClose  = document.getElementById('project-detail-close');
+  var projectDetailBack   = document.getElementById('project-detail-backdrop');
+  var pdKicker  = document.getElementById('project-detail-kicker');
+  var pdTitle   = document.getElementById('project-detail-title');
+  var pdDesc    = document.getElementById('project-detail-desc');
+  var pdSteps   = document.getElementById('project-detail-steps');
+  var pdChips   = document.getElementById('project-detail-chips');
+  var pdLink    = document.getElementById('project-detail-link');
+  var pdLastFocus = null;
+
+  function openProjectModal(idx) {
+    var data = PROJECT_DATA[idx];
+    if (!data || !projectDetailModal) return;
+    pdLastFocus = document.activeElement;
+    if (pdKicker) { pdKicker.textContent = data.kicker; pdKicker.style.color = data.accentColor; }
+    if (pdTitle)  pdTitle.textContent = data.title;
+    if (pdDesc)   pdDesc.textContent  = data.desc;
+    if (pdSteps)  pdSteps.innerHTML   = data.steps.map(function(s, i){
+      return '<span><b>0' + (i + 1) + '</b> ' + s + '</span>';
+    }).join('');
+    if (pdChips)  pdChips.innerHTML   = data.chips.map(function(c){
+      return '<span class="chip ' + c.cls + '">' + c.label + '</span>';
+    }).join('');
+    if (pdLink)   pdLink.href = data.link;
+    projectDetailModal.classList.add('open');
+    projectDetailModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (projectDetailClose) projectDetailClose.focus();
+    // Let spotlight system re-cache the now-visible modal card rect
+    requestAnimationFrame(function() { window.dispatchEvent(new Event('resize')); });
+  }
+
+  function closeProjectModal() {
+    if (!projectDetailModal) return;
+    projectDetailModal.classList.remove('open');
+    projectDetailModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (pdLastFocus && typeof pdLastFocus.focus === 'function') pdLastFocus.focus();
+  }
+
+  if (projectDetailClose) projectDetailClose.addEventListener('click', closeProjectModal);
+  if (projectDetailBack)  projectDetailBack.addEventListener('click', closeProjectModal);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && projectDetailModal && projectDetailModal.classList.contains('open')) closeProjectModal();
+  });
+
 
   var contactModal = document.getElementById('contact-modal');
   var contactForm = document.getElementById('contact-form');

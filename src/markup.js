@@ -234,41 +234,10 @@ export const markup = `
     <p class="section-eyebrow reveal">What I&apos;ve Built</p>
     <h2 class="section-heading reveal reveal-delay-1" id="projects-heading">Projects</h2>
     <p class="section-sub reveal reveal-delay-2">Each project bridges data and product — built end-to-end, from raw pipeline to polished interface.</p>
-      <div class="project-scroll-stage">
-        <!-- Sidebar: rail-positioned copy with per-project panels scrubbed by GSAP -->
-        <div class="project-stage-rail" aria-hidden="true">
-          <div class="project-stage-track">
-            <div class="project-stage-copy reveal reveal-delay-3">
-              <div class="project-stage-kicker">Project Systems</div>
-
-              <!-- Per-project panels — GSAP scrubs between these -->
-              <div class="project-panels-wrap">
-                <div class="project-panel" data-index="0">
-                  <div class="project-stage-title">Stock Sentiment Analysis</div>
-                  <div class="project-stage-panel-desc">Real-time NLP pipeline turning financial news &amp; social signals into actionable equity sentiment scores.</div>
-                </div>
-                <div class="project-panel" data-index="1">
-                  <div class="project-stage-title">Neural Kitchen</div>
-                  <div class="project-stage-panel-desc">AI recipe generation from whatever ingredients you have — LLM reasoning meets a curated ingredient graph.</div>
-                </div>
-                <div class="project-panel" data-index="2">
-                  <div class="project-stage-title">AI Aware Newsletter</div>
-                  <div class="project-stage-panel-desc">Fully automated daily AI digest — scrape, summarise, format, and distribute with zero manual intervention.</div>
-                </div>
-              </div>
-
-              <div class="project-stage-steps">
-                <span><b>01</b> Signal ingestion</span>
-                <span><b>02</b> Model reasoning</span>
-                <span><b>03</b> Automated distribution</span>
-              </div>
-            </div>
-          </div>
-        </div>
     <div class="projects-grid">
 
       <!-- Stock Sentiment -->
-      <a href="https://stock-dashboardv2.vercel.app/" class="project-card glow-card reveal-opacity reveal-delay-1" data-project-index="0" data-glow data-color="gold" target="_blank" rel="noopener noreferrer" aria-label="Stock Sentiment Analysis — open live dashboard">
+      <div class="project-card glow-card reveal-opacity reveal-delay-1" data-project-index="0" data-glow data-color="gold" role="button" tabindex="0" aria-label="Stock Sentiment Analysis — view project details" data-project-open="0">
         <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" aria-hidden="true">
@@ -277,14 +246,16 @@ export const markup = `
             </svg>
           </div>
           <div class="project-card-arrow" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </div>
         </div>
-        <p class="project-card-eyebrow">BI Dashboard</p>
+        <p class="project-card-eyebrow">AI Powered BI Dashboard</p>
         <h3 class="project-card-title">Stock Sentiment Analysis</h3>
-        <p class="project-card-desc">Real-time NLP pipeline that aggregates financial news and social signals to produce sentiment scores for equities. Visualised in an interactive dashboard with trend overlays.</p>
-        <div class="project-card-status" aria-hidden="true">
-          <span>Market signal</span><b>Live dashboard</b>
+        <p class="project-card-desc">Custom AI agent that scores market sentiment from financial news and social signals in real time. Paired with live interactive stock charts featuring fully customizable technical indicators.</p>
+        <div class="project-card-steps" aria-hidden="true">
+          <span><b>01</b> Data ingestion</span>
+          <span><b>02</b> Agent reasoning</span>
+          <span><b>03</b> Live visualisation</span>
         </div>
         <div class="project-telemetry telemetry-market" aria-hidden="true">
           <div class="telemetry-topline"><span>Signal Feed</span><span>+18.4%</span></div>
@@ -295,29 +266,31 @@ export const markup = `
         </div>
         <div class="project-card-chips">
           <span class="chip chip-gold">Python</span>
-          <span class="chip chip-gold">NLP</span>
-          <span class="chip chip-neutral">Pandas</span>
-          <span class="chip chip-neutral">Power BI</span>
+          <span class="chip chip-gold">Agentic AI</span>
+          <span class="chip chip-neutral">Live Charts</span>
+          <span class="chip chip-neutral">APIs</span>
         </div>
-        <div class="project-card-cta" aria-hidden="true"><span>Open live dashboard</span></div>
-      </a>
+        <div class="project-card-cta" aria-hidden="true"><span>View Project</span></div>
+      </div>
 
       <!-- Neural Kitchen -->
-      <a href="https://neuralkitchen.vercel.app" class="project-card glow-card reveal-opacity reveal-delay-2" data-project-index="1" data-glow data-color="purple" target="_blank" rel="noopener noreferrer" aria-label="Neural Kitchen">
+      <div class="project-card glow-card reveal-opacity reveal-delay-2" data-project-index="1" data-glow data-color="purple" role="button" tabindex="0" aria-label="Neural Kitchen — view project details" data-project-open="1">
         <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" style="background:var(--color-secondary-hl);border-color:rgba(122,90,143,0.2);color:#B8A0CC" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
           </div>
           <div class="project-card-arrow" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </div>
         </div>
         <p class="project-card-eyebrow" style="color:#B8A0CC">AI App</p>
         <h3 class="project-card-title">Neural Kitchen</h3>
         <p class="project-card-desc">AI-powered web app that generates recipes from whatever ingredients you have on hand. Combines a language model with a curated ingredient graph for relevant, practical results.</p>
-        <div class="project-card-status" aria-hidden="true">
-          <span>Model workflow</span><b>External live app</b>
+        <div class="project-card-steps" aria-hidden="true">
+          <span><b>01</b> Ingredient parsing</span>
+          <span><b>02</b> LLM generation</span>
+          <span><b>03</b> Recipe delivery</span>
         </div>
         <div class="project-telemetry telemetry-network" aria-hidden="true">
           <div class="telemetry-topline"><span>Ingredient Graph</span><span>LLM</span></div>
@@ -330,11 +303,11 @@ export const markup = `
           <span class="chip chip-neutral">Python</span>
           <span class="chip chip-neutral">API</span>
         </div>
-        <div class="project-card-cta" aria-hidden="true"><span>Launch live app</span></div>
-      </a>
+        <div class="project-card-cta" aria-hidden="true"><span>View Project</span></div>
+      </div>
 
       <!-- AI Newsletter -->
-      <a href="https://aiaware.beehiiv.com" class="project-card glow-card reveal-opacity reveal-delay-3" data-project-index="2" data-glow data-color="green" target="_blank" rel="noopener noreferrer" aria-label="AI Aware Newsletter">
+      <div class="project-card glow-card reveal-opacity reveal-delay-3" data-project-index="2" data-glow data-color="green" role="button" tabindex="0" aria-label="AI Aware Newsletter — view project details" data-project-open="2">
         <div class="glow-inner" data-glow></div>
         <div class="project-card-header">
           <div class="project-card-icon" style="background:rgba(77,170,116,0.1);border-color:rgba(77,170,116,0.2);color:var(--color-success)" aria-hidden="true">
@@ -343,14 +316,16 @@ export const markup = `
             </svg>
           </div>
           <div class="project-card-arrow" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </div>
         </div>
         <p class="project-card-eyebrow" style="color:var(--color-success)">Automation</p>
         <h3 class="project-card-title">AI Aware Newsletter</h3>
         <p class="project-card-desc">Fully automated newsletter pipeline — scrapes, summarises, and formats daily AI research digests using LLMs, then distributes on schedule with zero manual intervention.</p>
-        <div class="project-card-status" aria-hidden="true">
-          <span>Distribution loop</span><b>Scheduled system</b>
+        <div class="project-card-steps" aria-hidden="true">
+          <span><b>01</b> Scrape &amp; summarise</span>
+          <span><b>02</b> Format digest</span>
+          <span><b>03</b> Schedule &amp; send</span>
         </div>
         <div class="project-telemetry telemetry-feed" aria-hidden="true">
           <div class="telemetry-topline"><span>Daily Pipeline</span><span>06:00</span></div>
@@ -364,10 +339,9 @@ export const markup = `
           <span class="chip chip-neutral">Python</span>
           <span class="chip chip-neutral">Scheduling</span>
         </div>
-        <div class="project-card-cta" aria-hidden="true"><span>Read newsletter</span></div>
-      </a>
+        <div class="project-card-cta" aria-hidden="true"><span>View Project</span></div>
+      </div>
 
-    </div>
     </div>
     <div class="aurora-bleed" id="aurora-bleed"></div>
   </div>
@@ -585,5 +559,27 @@ export const markup = `
       <p class="contact-status" id="contact-status" role="status" aria-live="polite"></p>
     </form>
   </section>
+</div>
+
+<!-- PROJECT DETAIL MODAL -->
+<div class="project-detail-modal" id="project-detail-modal" aria-hidden="true">
+  <div class="project-detail-backdrop" id="project-detail-backdrop"></div>
+  <div class="project-detail-card glow-card" role="dialog" aria-modal="true" aria-labelledby="project-detail-title" data-glow data-color="gold">
+    <div class="glow-inner" data-glow></div>
+    <button type="button" class="project-detail-close" id="project-detail-close" aria-label="Close project detail">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="project-detail-inner">
+      <p class="project-detail-kicker" id="project-detail-kicker"></p>
+      <h2 class="project-detail-title" id="project-detail-title"></h2>
+      <p class="project-detail-desc" id="project-detail-desc"></p>
+      <div class="project-detail-steps" id="project-detail-steps"></div>
+      <div class="project-detail-chips" id="project-detail-chips"></div>
+      <a class="btn btn-primary project-detail-link" id="project-detail-link" target="_blank" rel="noopener noreferrer">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Visit Project
+      </a>
+    </div>
+  </div>
 </div>
 `;
