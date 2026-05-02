@@ -564,7 +564,7 @@ export const markup = `
 <!-- PROJECT DETAIL MODAL -->
 <div class="project-detail-modal" id="project-detail-modal" aria-hidden="true">
   <div class="project-detail-backdrop" id="project-detail-backdrop"></div>
-  <div class="project-detail-card glow-card" role="dialog" aria-modal="true" aria-labelledby="project-detail-title" data-glow data-color="gold">
+  <div class="project-detail-card glow-card" role="dialog" aria-modal="true" aria-labelledby="project-detail-title" data-glow data-color="rainbow">
     <div class="glow-inner" data-glow></div>
     <button type="button" class="project-detail-close" id="project-detail-close" aria-label="Close project detail">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>

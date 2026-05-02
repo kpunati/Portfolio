@@ -614,6 +614,7 @@ footer::before { content: ''; position: absolute; inset: -60px 0 0; z-index: -1;
 .glow-card[data-color="red"] { --base: 0; --spread: 200; }
 .glow-card[data-color="orange"] { --base: 30; --spread: 200; }
 .glow-card[data-color="gold"] { --base: 40; --spread: 60; }
+.glow-card[data-color="rainbow"] { --base: 0; --spread: 360; }
 
 .glow-card[data-glow]::before,
 .glow-card[data-glow]::after {
@@ -680,6 +681,13 @@ footer::before { content: ''; position: absolute; inset: -60px 0 0; z-index: -1;
 .glow-card:not(.spotlight-active):not(:hover):not(.is-active) .glow-inner {
   opacity: 0.38;
   filter: none;
+}
+
+body.modal-open .glow-card:not(.project-detail-card)::before,
+body.modal-open .glow-card:not(.project-detail-card)::after,
+body.modal-open .glow-card:not(.project-detail-card) .glow-inner {
+  opacity: 0 !important;
+  transition: opacity 0.2s;
 }
 
 /* ─── LIQUID GLASS LOADER ────────────────────────────────────────── */
@@ -846,12 +854,12 @@ a[href="#main-content"]:focus-visible {
 .project-detail-modal { position: fixed; inset: 0; z-index: 500; display: grid; place-items: center; padding: var(--space-6); opacity: 0; pointer-events: none; transition: opacity 0.28s ease; }
 .project-detail-modal.open { opacity: 1; pointer-events: auto; }
 .project-detail-backdrop { position: absolute; inset: 0; background: rgba(2,2,5,0.62); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); }
-.project-detail-card { width: min(660px, 100%); position: relative; border: 1px solid rgba(212,166,82,0.22); border-radius: var(--radius-lg); padding: clamp(var(--space-6), 4vw, var(--space-10)); background: linear-gradient(145deg, rgba(25,22,18,0.94), rgba(8,7,8,0.96)); box-shadow: 0 40px 140px rgba(0,0,0,0.78), inset 0 1px 0 rgba(244,239,231,0.06); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); transform: translateY(22px) scale(0.97); transition: transform 0.28s cubic-bezier(0.16,1,0.3,1); max-height: 90dvh; overflow-y: auto; overflow-x: hidden; }
+.project-detail-card { width: min(660px, 100%); position: relative; border: 1px solid rgba(212,166,82,0.22); border-radius: var(--radius-lg); padding: clamp(var(--space-6), 4vw, var(--space-10)); background: linear-gradient(145deg, rgba(25,22,18,0.94), rgba(8,7,8,0.96)); box-shadow: 0 40px 140px rgba(0,0,0,0.78), inset 0 1px 0 rgba(244,239,231,0.06); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); transform: translateY(22px) scale(0.97); transition: transform 0.28s cubic-bezier(0.16,1,0.3,1); max-height: 90dvh; display: flex; flex-direction: column; }
 .project-detail-card .glow-inner { pointer-events: none; }
 .project-detail-modal.open .project-detail-card { transform: translateY(0) scale(1); }
 .project-detail-close { position: absolute; top: 16px; right: 16px; z-index: 2; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 999px; color: rgba(244,239,231,0.76); border: 1px solid rgba(212,166,82,0.22); background: rgba(212,166,82,0.08); transition: color var(--transition), border-color var(--transition), background var(--transition); }
 .project-detail-close:hover { color: var(--color-text); border-color: rgba(94,234,212,0.38); background: rgba(94,234,212,0.12); }
-.project-detail-inner { position: relative; z-index: 1; display: flex; flex-direction: column; gap: var(--space-5); align-items: center; text-align: center; }
+.project-detail-inner { position: relative; z-index: 1; display: flex; flex-direction: column; gap: var(--space-5); align-items: center; text-align: center; overflow-y: auto; overflow-x: hidden; padding-right: var(--space-2); }
 .project-detail-kicker { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; text-shadow: 0 0 24px currentColor; }
 .project-detail-title { font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700; color: var(--color-text); line-height: 1.05; letter-spacing: -0.02em; }
 .project-detail-desc { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.68; max-width: 52ch; }

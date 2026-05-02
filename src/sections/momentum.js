@@ -186,9 +186,10 @@ export function initMomentum() {
     projectDetailModal.classList.add('open');
     projectDetailModal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
     if (projectDetailClose) projectDetailClose.focus();
-    // Let spotlight system re-cache the now-visible modal card rect
-    requestAnimationFrame(function() { window.dispatchEvent(new Event('resize')); });
+    // Let spotlight system re-cache the now-visible modal card rect after animation
+    setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 300);
   }
 
   function closeProjectModal() {
@@ -196,6 +197,7 @@ export function initMomentum() {
     projectDetailModal.classList.remove('open');
     projectDetailModal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    document.body.classList.remove('modal-open');
     if (pdLastFocus && typeof pdLastFocus.focus === 'function') pdLastFocus.focus();
   }
 
