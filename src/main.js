@@ -33,6 +33,37 @@ function setVisualQuality(quality) {
   window.__portfolioVisualQuality = quality;
 }
 
+function loadLaborSkillsWhenNeeded() {
+  const shell = document.getElementById('labor-skills-shell');
+  if (!shell) return;
+  let loaded = false;
+
+  const load = async () => {
+    if (loaded) return;
+    loaded = true;
+    try {
+      const { initLaborSkills } = await import('./sections/labor-skills.js');
+      initLaborSkills();
+    } catch (error) {
+      console.error('main.js: labor-skills boot failed', error);
+    }
+  };
+
+  if (!('IntersectionObserver' in window)) {
+    whenIdle(load);
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) {
+      observer.disconnect();
+      load();
+    }
+  }, { rootMargin: '600px 0px', threshold: 0.01 });
+
+  observer.observe(shell);
+}
+
 function loadGlobeWhenNeeded(options = {}) {
   const dashboards = document.getElementById('dashboards');
   let loaded = false;
@@ -137,6 +168,7 @@ async function bootVisuals() {
 
   loadHelixWhenNeeded();
   loadGlobeWhenNeeded({ visualQuality });
+  loadLaborSkillsWhenNeeded();
 }
 
 function boot() {

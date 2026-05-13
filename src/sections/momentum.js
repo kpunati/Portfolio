@@ -155,6 +155,34 @@ export function initMomentum() {
       ],
       link: 'https://aiaware.beehiiv.com',
       accentColor: 'var(--color-success)'
+    },
+    {
+      kicker: 'AI Learning Platform',
+      title: 'ModelMaster',
+      desc: 'Online LMS for AI, data, and automation education. The experience organizes project-led course paths, guided module pages, enrollment and waitlist flows, blog content, testimonials, and support pages into a polished learning system built around practical analysis work.',
+      steps: ['Course catalog', 'Guided modules', 'Enrollment path'],
+      chips: [
+        { label: 'React', cls: 'chip-gold' },
+        { label: 'AI Education', cls: 'chip-plum' },
+        { label: 'LMS', cls: 'chip-neutral' },
+        { label: 'Automation', cls: 'chip-neutral' }
+      ],
+      link: 'https://model-master-black.vercel.app/',
+      accentColor: '#5EEAD4'
+    },
+    {
+      kicker: 'Threat Intelligence',
+      title: 'Cyber Threat Pulse',
+      desc: 'Public vulnerability intelligence dashboard that aggregates CISA KEV, NVD, GitHub Advisories, and FIRST EPSS signals. It highlights exploited CVEs, critical vulnerabilities, exploit probability, open-source advisories, vendor distribution, source health, and cache freshness for a fast cyber-risk command view.',
+      steps: ['Public feeds', 'Risk scoring', 'Vendor context'],
+      chips: [
+        { label: 'CVE Data', cls: 'chip-gold' },
+        { label: 'CISA KEV', cls: 'chip-neutral' },
+        { label: 'NVD', cls: 'chip-neutral' },
+        { label: 'EPSS', cls: 'chip-plum' }
+      ],
+      link: 'https://cyber-dashboard-beta.vercel.app/',
+      accentColor: '#FCA5A5'
     }
   ];
 

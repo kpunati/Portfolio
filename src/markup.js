@@ -199,12 +199,12 @@ export const markup = `
       <div class="hero-stats">
         <div class="hero-stat glow-card" data-glow data-color="gold">
           <div class="glow-inner" data-glow></div>
-          <div class="hero-stat-val"><span class="accent" data-count="3">3</span></div>
+          <div class="hero-stat-val"><span class="accent" data-count="5">5</span></div>
           <div class="hero-stat-label">Live Projects</div>
         </div>
         <div class="hero-stat glow-card" data-glow data-color="gold">
           <div class="glow-inner" data-glow></div>
-          <div class="hero-stat-val"><span data-count="50">50</span><span class="accent">K</span></div>
+          <div class="hero-stat-val"><span data-count="250">250</span><span class="accent">K+</span></div>
           <div class="hero-stat-label">Data Points</div>
         </div>
         <div class="hero-stat glow-card" data-glow data-color="gold">
@@ -342,6 +342,80 @@ export const markup = `
         <div class="project-card-cta" aria-hidden="true"><span>View Project</span></div>
       </div>
 
+      <!-- ModelMaster -->
+      <div class="project-card glow-card reveal-opacity reveal-delay-1" data-project-index="3" data-glow data-color="gold" role="button" tabindex="0" aria-label="ModelMaster — view project details" data-project-open="3">
+        <div class="glow-inner" data-glow></div>
+        <div class="project-card-header">
+          <div class="project-card-icon" style="background:rgba(94,234,212,0.1);border-color:rgba(94,234,212,0.22);color:#5EEAD4" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h6M8 11h8M8 15h5"/>
+            </svg>
+          </div>
+          <div class="project-card-arrow" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+        <p class="project-card-eyebrow" style="color:#5EEAD4">AI Learning Platform</p>
+        <h3 class="project-card-title">ModelMaster</h3>
+        <p class="project-card-desc">Online LMS for AI, data, and automation education. Structures project-led courses, guided modules, enrollment flows, and content pages into a polished learning system.</p>
+        <div class="project-card-steps" aria-hidden="true">
+          <span><b>01</b> Course catalog</span>
+          <span><b>02</b> Guided modules</span>
+          <span><b>03</b> Enrollment path</span>
+        </div>
+        <div class="project-telemetry telemetry-learning" aria-hidden="true">
+          <div class="telemetry-topline"><span>Learning Path</span><span>LMS</span></div>
+          <div class="learning-track">
+            <span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span>
+          </div>
+          <div class="learning-pulse"></div>
+        </div>
+        <div class="project-card-chips">
+          <span class="chip chip-gold">React</span>
+          <span class="chip chip-plum">AI Education</span>
+          <span class="chip chip-neutral">LMS</span>
+          <span class="chip chip-neutral">Automation</span>
+        </div>
+        <div class="project-card-cta" aria-hidden="true"><span>View Project</span></div>
+      </div>
+
+      <!-- Cyber Threat Pulse -->
+      <div class="project-card glow-card reveal-opacity reveal-delay-2" data-project-index="4" data-glow data-color="purple" role="button" tabindex="0" aria-label="Cyber Threat Pulse — view project details" data-project-open="4">
+        <div class="glow-inner" data-glow></div>
+        <div class="project-card-header">
+          <div class="project-card-icon" style="background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.24);color:#FCA5A5" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3 20 7v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V7l8-4Z"/><path d="M8 12h2l2-4 2 8 2-4h2"/>
+            </svg>
+          </div>
+          <div class="project-card-arrow" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+        <p class="project-card-eyebrow" style="color:#FCA5A5">Threat Intelligence</p>
+        <h3 class="project-card-title">Cyber Threat Pulse</h3>
+        <p class="project-card-desc">Public cyber-risk dashboard that turns vulnerability, exploited-CVE, EPSS, and advisory feeds into a command view for vendor and service exposure signals.</p>
+        <div class="project-card-steps" aria-hidden="true">
+          <span><b>01</b> Public feeds</span>
+          <span><b>02</b> Risk scoring</span>
+          <span><b>03</b> Vendor context</span>
+        </div>
+        <div class="project-telemetry telemetry-threat" aria-hidden="true">
+          <div class="telemetry-topline"><span>Threat Feed</span><span>KEV / EPSS</span></div>
+          <div class="threat-radar">
+            <span class="r1"></span><span class="r2"></span><span class="r3"></span>
+            <i style="--x:22%;--y:58%;--tone:#f97316"></i><i style="--x:51%;--y:36%;--tone:#facc15"></i><i style="--x:72%;--y:64%;--tone:#67e8f9"></i>
+          </div>
+        </div>
+        <div class="project-card-chips">
+          <span class="chip chip-gold">CVE Data</span>
+          <span class="chip chip-neutral">CISA KEV</span>
+          <span class="chip chip-neutral">NVD</span>
+          <span class="chip chip-plum">EPSS</span>
+        </div>
+        <div class="project-card-cta" aria-hidden="true"><span>View Project</span></div>
+      </div>
+
     </div>
     <div class="aurora-bleed" id="aurora-bleed"></div>
   </div>
@@ -444,6 +518,31 @@ export const markup = `
           </div>
         </div>
       </div>
+      </div>
+
+      <!-- Labor Market Skills Heatmap -->
+      <div class="embed-shell glow-card reveal labor-skills-shell" id="labor-skills-shell" data-glow data-color="gold">
+        <div class="glow-inner" data-glow></div>
+        <div class="embed-shell-header">
+          <div class="embed-shell-dots" aria-hidden="true">
+            <div class="embed-shell-dot"></div><div class="embed-shell-dot"></div><div class="embed-shell-dot"></div>
+          </div>
+          <span class="embed-shell-title">Labor Market Skills Heatmap</span>
+          <div class="embed-shell-status">
+            <span class="chip chip-neutral ls-chip" data-ls-count>-- postings</span>
+            <span class="chip chip-neutral ls-chip" data-ls-updated>Updated --</span>
+            <span class="chip chip-gold ls-chip" data-ls-status="loading">Loading</span>
+          </div>
+        </div>
+        <div class="ls-subhead">
+          <p class="ls-subhead-title">Live public job postings translated into skill demand, role clusters, and emerging skill pairings.</p>
+        </div>
+        <div class="ls-body" data-ls-body>
+          <div class="ls-state" role="status" aria-live="polite">
+            <div class="ls-spinner" aria-hidden="true"></div>
+            <p>Sampling public postings&hellip;</p>
+          </div>
+        </div>
       </div>
 
     </div>
