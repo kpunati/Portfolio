@@ -107,7 +107,7 @@ export const markup = `
   <ul class="nav-links" role="list">
     <li><a href="#projects">Projects</a></li>
     <li><a href="#dashboards">Dashboards</a></li>
-    <li><a href="#about">About</a></li>
+    <li><a href="/about.html">About</a></li>
   </ul>
   <button type="button" class="btn nav-cta nav-cta-desktop" data-contact-open aria-label="Open contact form">Get in Touch</button>
   <button class="nav-mobile-toggle" aria-label="Open menu" aria-expanded="false">
@@ -130,7 +130,7 @@ export const markup = `
       <li><a href="#hero"    class="mobile-nav-link" data-mobile-nav-close>Home</a></li>
       <li><a href="#projects" class="mobile-nav-link" data-mobile-nav-close>Projects</a></li>
       <li><a href="#dashboards" class="mobile-nav-link" data-mobile-nav-close>Dashboards</a></li>
-      <li><a href="#about"   class="mobile-nav-link" data-mobile-nav-close>About</a></li>
+      <li><a href="/about.html" class="mobile-nav-link" data-mobile-nav-close>About</a></li>
     </ul>
     <button type="button" class="btn btn-primary mobile-nav-cta" data-contact-open data-mobile-nav-close>Get in Touch</button>
   </nav>

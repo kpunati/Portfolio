@@ -133,6 +133,10 @@ Useful extra checks when you change layout, motion, or contact flow:
 - If the user asks for performance work, keep the art direction intact and optimize the expensive paths first.
 - If the user asks for a production-ready addition, consider whether it belongs in this single-page structure or should remain a roadmap item.
 
+## In-Flight Work
+
+- **Background UI change coming.** The full-viewport 3D helix at [`src/sections/particles.js`](./src/sections/particles.js) (mounted as `#helix-canvas` at z-index 2) is queued for removal and replacement with a scroll-scrubbed assembly/disassembly backdrop. Custom graphics are being prepared by the owner. The replacement consumes existing scroll CSS variables (`--hero-pressure`, `--projects-depth`, `--scan-progress`, `--globe-emerge`, `--about-calm`) and adds zero rAF cost. Until those assets arrive, the helix stays. **Do not refactor or extend `particles.js`** — it is scheduled for deletion. Full plan: `/Users/karti/.claude/plans/can-you-take-a-breezy-ocean.md` (Track A).
+
 ## Current Roadmap Boundary
 
 Not currently implemented unless requested:

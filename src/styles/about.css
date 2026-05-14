@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════════
+   ABOUT PAGE STYLES (Personal Vibe)
+   ═══════════════════════════════════════════════════════════════ */
+
+body {
+  background-color: var(--color-bg);
+  overflow-x: hidden;
+}
+
+.about-hero {
+  padding-top: calc(var(--nav-height) + 3rem);
+  padding-bottom: 4rem;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Asymmetric Layout ── */
+.about-page-container {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: 5rem;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 2rem;
+  align-items: center;
+}
+
+.about-content-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  z-index: 10;
+}
+
+/* ── Glow Cards & Details ── */
+.about-detail-card {
+  padding: 2.2rem 2.5rem;
+  background: rgba(25, 23, 20, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.about-bio {
+  color: var(--color-text-dim);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 1.2rem;
+}
+.about-bio:last-child {
+  margin-bottom: 0;
+}
+.about-bio strong {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+/* ── KPI Grid ── */
+.about-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.about-kpi {
+  padding: 1.8rem;
+  text-align: left;
+  background: rgba(25, 23, 20, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.about-kpi-val {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+
+.about-kpi-label {
+  color: var(--color-text-dim);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+/* ── Portrait Right ── */
+.about-portrait-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ── Lando Norris Reveal Effect ── */
+.reveal-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 3 / 4; /* Perfect portrait aspect ratio */
+  cursor: ew-resize; /* Left-Right Arrow Cursor */
+  --x: 50%;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  /* Radial gradient fallback in case transparent PNGs don't obscure each other */
+  background: radial-gradient(circle at center, #2a2520 0%, #151311 100%);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.reveal-wrapper:hover {
+  transform: translateY(-8px);
+}
+
+.reveal-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none; /* Let the wrapper handle mouse events */
+}
+
+/* Inverse Masking Magic */
+.image-casual {
+  clip-path: polygon(0 0, var(--x) 0, var(--x) 100%, 0 100%);
+  z-index: 1;
+}
+
+.image-racing {
+  clip-path: polygon(var(--x) 0, 100% 0, 100% 100%, var(--x) 100%);
+  z-index: 1;
+}
+
+/* Glowing Divider Line */
+.reveal-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--x);
+  width: 2px;
+  background: var(--color-primary);
+  box-shadow: 0 0 20px var(--color-primary), 0 0 8px var(--color-primary);
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+  z-index: 3;
+}
+
+/* Floating Hint Badge */
+.reveal-hint {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 10, 10, 0.7);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  opacity: 0.85;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 4;
+}
+
+.reveal-wrapper:hover .reveal-divider {
+  opacity: 1;
+}
+
+.reveal-wrapper:hover .reveal-hint {
+  opacity: 0;
+  transform: translate(-50%, 10px);
+}
+
+/* ── Responsive Mobile Layout ── */
+@media (max-width: 992px) {
+  .about-page-container {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  .about-hero {
+    padding-top: calc(var(--nav-height) + 2rem);
+  }
+  .reveal-wrapper {
+    max-width: 400px;
+  }
+  .about-portrait-right {
+    order: -1; /* Bumps the portrait to the top on mobile screens */
+  }
+}

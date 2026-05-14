@@ -5,3 +5,5 @@ dist/
 *.local
 *.mov
 *.mp4
+*.png
+AGENTS.md

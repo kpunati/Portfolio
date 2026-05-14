@@ -1023,3 +1023,49 @@ a[href="#main-content"]:focus-visible {
   .ls-spinner { animation: none !important; }
   .ls-heat-cell { transition: none !important; }
 }
+
+/* ─── LITE QUALITY DOWNGRADES (weak GPUs / mobile) ─────────────── */
+/* Applied when detectVisualQuality() (src/main.js) sets data-visual-quality="lite".
+   Auto-applies to mobile + ≤4-core / ≤4GB-RAM laptops. Cuts the GPU bill on
+   weak hardware without touching the cinematic full/balanced tiers. */
+
+/* 1. Lighten the fixed-position backdrop filters — 4-5 simultaneous
+      offscreen rasters become 2 cheap ones. Biggest single win. */
+html[data-visual-quality="lite"] .nav,
+html[data-visual-quality="lite"] .command-strip {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+html[data-visual-quality="lite"] .contact-card {
+  backdrop-filter: blur(8px) saturate(1.05);
+  -webkit-backdrop-filter: blur(8px) saturate(1.05);
+}
+
+/* 2. Disable glow-card spotlight system — no per-card radial gradient +
+      brightness filter recompute on mousemove. */
+html[data-visual-quality="lite"] .glow-card[data-glow]::before,
+html[data-visual-quality="lite"] .glow-card[data-glow]::after { display: none; }
+html[data-visual-quality="lite"] .glow-card .glow-inner { display: none; }
+
+/* 3. Drop scroll-tied blur filters that recompute every scroll tick. */
+html[data-visual-quality="lite"] .hero::before {
+  filter: drop-shadow(0 0 18px rgba(212, 166, 82, 0.08));
+}
+html[data-visual-quality="lite"] .hero::after {
+  filter: none;
+  opacity: calc(0.12 + var(--hero-pressure) * 0.18);
+}
+html[data-visual-quality="lite"] .globe-parallax-wrap::before { filter: blur(6px); }
+html[data-visual-quality="lite"] .orbital-field-glow { filter: blur(4px); }
+
+/* 4. Calm hover / dynamic shadow on project cards + embed shell. */
+html[data-visual-quality="lite"] .project-card { transition: none; }
+html[data-visual-quality="lite"] .project-card:hover {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+html[data-visual-quality="lite"] .embed-shell {
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(244, 239, 231, 0.02);
+}
+
+/* 5. Remove animated drop-shadows on lite. */
+html[data-visual-quality="lite"] .hero-signal-lines svg { filter: none; }
