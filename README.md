@@ -1,6 +1,6 @@
 # Portfolio
 
-Karthik Punati's portfolio — built with Vite, Three.js, and GSAP.
+built with Vite, Three.js, and GSAP.
 
 ## Local dev
 
